@@ -21,8 +21,9 @@ module s_box_tb();
             $display("Test case 1 failed: expected 638292c3, got %h", row_out);
         else
             $display("Test case 1 passed");
+
+        $finish;
     end
 
-    $finish;
 endmodule
 

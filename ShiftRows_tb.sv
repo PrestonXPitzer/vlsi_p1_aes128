@@ -41,15 +41,10 @@ module ShiftRows_tb();
 
     // Run the test for random vectors, 1 for each row value
     initial begin
-        // Test for row 0 (no shift)
-        test_shiftrows(2'b00, 32'h01234567, 32'h01234567);
-        // Test for row 1 (1-byte left shift)
-        test_shiftrows(2'b01, 32'h89abcdef, 32'h9abcdef8);
-        // Test for row 2 (2-byte left shift)
-        test_shiftrows(2'b10, 32'hfedcba98, 32'hdcbafedc);
-        // Test for row 3 (3-byte left shift)
-        test_shiftrows(2'b11, 32'h76543210, 32'h43210765);
-
+        test_shiftrows(2'b00, 32'h00112233, 32'h00112233); // No shift
+        test_shiftrows(2'b01, 32'h00112233, 32'h11223300); // 1-byte left shift
+        test_shiftrows(2'b10, 32'h00112233, 32'h22330011); // 2-byte left shift
+        test_shiftrows(2'b11, 32'h00112233, 32'h33001122); // 3-byte left shift
         $finish;
     end
 
