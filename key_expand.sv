@@ -4,7 +4,7 @@ module key_expand(
     input  logic        start,
     input  logic [31:0]  cipher_key,   // initial key pulled in 4cycles (32bit each)
     input  logic [1:0]   r_index,      // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_n,  // which round key to output (ask preston)
+    input  logic [3:0]   round_key_num,  // which round key to output (ask preston)
     output logic [31:0]  round_key,    // expanded round key
     output logic         done          // high when round_key output is valid
 );
@@ -17,16 +17,16 @@ module key_expand(
     //process for loading the cipher key
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            key_reg    <= 128'b0; //initialize
-            load_count <= 2'b0; 
-            
-            //loading    <= 1'b0;
+            key_reg    <= 128'd0; //initialize
+            load_count <= 2'd0;            
+            loading    <= 1'd0;
         end else begin
             if (start) begin //assuming start stays high for all 4 loads
                 // start loading from the first word
-                //load_count <= 2'b0;
-                //loading    <= 1'b1;
-          //  end else if (loading) begin
+                load_count <= 2'b0;
+                loading    <= 1'b1;
+            end 
+            else if (loading) begin
                 // shift in each 32-bit word
                 case (load_count)
                     2'd0: key_reg[127:96] <= cipher_key;  // first word (MSB)
@@ -37,11 +37,11 @@ module key_expand(
 
                 // increment counter
                 if (load_count == 2'd3) begin
-                    load_count <= 2'b0;  // done loading all 4 words
+                    load_count <= 2'b00;  // done loading all 4 words
+                    loading    <= 1'b0;
                 end else begin
                     load_count <= load_count + 1'b1;
                 end
-           // end
             end
         end
     end
@@ -54,7 +54,7 @@ module key_expand(
 
     //process for returning the round keys
     always_comb begin
-        round_key = round_keys[round_key_n][ (r_index*32) +: 32 ]; //bit slicing
+        round_key = round_keys[round_key_num][ (r_index*32) +: 32 ]; //bit slicing
     end
 
 
