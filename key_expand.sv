@@ -47,34 +47,49 @@ module key_expand(
     end
 
 
+    //varibles for 11 stage round key expansion:
+    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
+    state_t state;
+
+    logic [3:0] round_ctr;
+    logic [127:0] current_key;
+
     //key expansion code
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
+            state <= IDLE;
+            round_ctr <= 0;
             done <= 0;
-        end else if (!loading) begin
-            // Load initial key
-            round_keys[0] <= key_reg;
+        end else begin
+            case (state)
+                IDLE: if (!loading) begin
+                    current_key <= key_reg;  // initial key
+                    round_keys[0]   <= key_reg;
+                    round_ctr   <= 0;
+                    state       <= EXPAND;
+                end
+                EXPAND: begin
+                    //done after 10 cycles
+                    if (round_ctr <= 9) begin
+                        // generate next_key from current_key
+                        current_key <= next_key(current_key, round_ctr+1);
+                        round_keys[round_ctr+1] <= next_key(current_key, round_ctr+1);
+                        round_ctr <= round_ctr + 1;
+                    end 
+                    else state <= DONE;
+                end
+                DONE: begin
+                    done <= 1;
+                    state <= IDLE;
+                end
+            endcase
+        end
 
-            // Expand keys
-            for (int i = 1; i <= 10; i++) begin
-                logic [127:0] prev_key = round_keys[i-1];
-
-                // pull last word of previous round key
-                logic [31:0] temp = get_word(prev_key, 3);
-
-                // Special schedule core every 4th word
-                temp = sub_word(rot_word(temp)) ^ rcon(i);
-
-                // Build new round key word by word
-                logic [31:0] w0 = get_word(prev_key, 0) ^ temp;
-                logic [31:0] w1 = get_word(prev_key, 1) ^ w0;
-                logic [31:0] w2 = get_word(prev_key, 2) ^ w1;
-                logic [31:0] w3 = get_word(prev_key, 3) ^ w2;
-
-                round_keys[i] <= {w0, w1, w2, w3};
-            end
-
-            done <= 1;
+        //in case of another start pulse
+        if(loading) begin
+            done <= 1'd0;
+            round_ctr <= 0;
+            state <= IDLE;
         end
     end
         
@@ -87,6 +102,28 @@ module key_expand(
 
 
     //helper functions
+    // Function to generate the next round key
+    function automatic logic [127:0] next_key(
+            input logic [127:0] prev_key,
+            input int round_num
+        );
+            logic [31:0] temp, w0, w1, w2, w3;
+        begin
+            // pull last word of previous round key
+            temp = get_word(prev_key, 3);
+
+            // Special schedule core every 4th word
+            temp = sub_word(rot_word(temp)) ^ rcon(round_num);
+
+            // Build new round key word by word
+            w0 = get_word(prev_key, 0) ^ temp;
+            w1 = get_word(prev_key, 1) ^ w0;
+            w2 = get_word(prev_key, 2) ^ w1;
+            w3 = get_word(prev_key, 3) ^ w2;
+
+            return {w0, w1, w2, w3};
+        end
+    endfunction
 
     // 1byte circular left shift in a word
     function automatic logic [31:0] rot_word(input logic [31:0] w);
