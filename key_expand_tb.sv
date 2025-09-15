@@ -42,7 +42,8 @@ module tb_key_expand;
         reset = 0;
 
         start = 1;  // begin loading sequence
-
+        @(posedge clk);
+        start = 0; // finish start pulse
         cipher_key = 32'h54686174;  // "That"
         @(posedge clk);
         cipher_key = 32'h73206D79;  // "s my"
@@ -71,8 +72,8 @@ module tb_key_expand;
             end
             $display("");
         end
-
-        $finish;
+	$stop
+        //$finish;
     end
 
 endmodule

@@ -1,17 +1,17 @@
 module key_expand(
     input  logic        clk,
     input  logic        reset,
-    input  logic        start,
-    input  logic [31:0]  cipher_key,   // initial key pulled in 4cycles (32bit each)
-    input  logic [1:0]   r_index,      // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_num,  // which round key to output (ask preston)
-    output logic [31:0]  round_key,    // expanded round key
-    output logic         done          // high when round_key output is valid
+    input  logic        start,          //one cycle start pulse sent begin key expansion
+    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
+    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
+    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
+    output logic [31:0]  round_key,     // expanded round key
+    output logic         done           // high when round_key output is valid
 );
 
     logic [127:0] key_reg;      //stores the complete cipher key
     logic [1:0]   load_count;   // counts which 32-bit word we are on
-    //logic         loading;      // high when we are loading the key
+    logic         loading;      // high when we are loading the key
     logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
 
     //process for loading the cipher key
@@ -97,7 +97,7 @@ module key_expand(
 
     //process for returning the round keys
     always_comb begin
-        round_key = round_keys[round_key_num][ (r_index*32) +: 32 ]; //bit slicing
+        round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
     end
 
 
