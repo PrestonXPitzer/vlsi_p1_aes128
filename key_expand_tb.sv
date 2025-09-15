@@ -53,14 +53,12 @@ module tb_key_expand;
         cipher_key = 32'h67204675;  // "g Fu"
         @(posedge clk);
 
-        start = 0; // finish start pulse
 
         // Wait for expansion to complete
         wait(done);
 
-        // ------------------------------------------------
         // Print out all round keys
-        // ------------------------------------------------
+
         $display("All Round Keys:");
         for (int r = 0; r <= 10; r++) begin
             $write("Round %0d : ", r);
@@ -72,7 +70,119 @@ module tb_key_expand;
             end
             $display("");
         end
-	$stop
+
+        // Hold reset for a few cycles
+        #50;
+
+        $display("All Round Keys after some wait:");
+        for (int r = 0; r <= 10; r++) begin
+            $write("Round %0d : ", r);
+            for (int w = 0; w < 4; w++) begin
+                round_key_num = r;
+                r_index = w;
+                #1; // small delay for combinational settle
+                $write("%h ", round_key);
+            end
+            $display("");
+        end
+
+        #50;
+	@(posedge clk);
+        start = 1;  // begin loading sequence
+        @(posedge clk);
+        start = 0; // finish start pulse
+        cipher_key = 32'h54680000;  // 
+        @(posedge clk);
+        cipher_key = 32'h71010D79;  // 
+        @(posedge clk);
+        cipher_key = 32'h2000056E;  // 
+        @(posedge clk);
+        cipher_key = 32'h6794E465;  // 
+        @(posedge clk);
+
+        // Wait for expansion to complete
+        wait(done);
+
+        // Print out all round keys
+
+        $display("New Round Keys:");
+        for (int r = 0; r <= 10; r++) begin
+            $write("Round %0d : ", r);
+            for (int w = 0; w < 4; w++) begin
+                round_key_num = r;
+                r_index = w;
+                #1; // small delay for combinational settle
+                $write("%h ", round_key);
+            end
+            $display("");
+        end
+
+        #50;
+	@(posedge clk);
+        start = 1;  // begin loading sequence
+        @(posedge clk);
+        start = 0; // finish start pulse
+        cipher_key = 32'h54686174;  // "That"
+        @(posedge clk);
+        cipher_key = 32'h73206D79;  // "s my"
+        @(posedge clk);
+        cipher_key = 32'h204B756E;  // " Ku n"
+        @(posedge clk);
+        cipher_key = 32'h67204675;  // "g Fu"
+        @(posedge clk);
+
+        // Wait for expansion to complete
+        wait(done);
+
+        // Print out all round keys
+
+        $display("Back to original:");
+        for (int r = 0; r <= 10; r++) begin
+            $write("Round %0d : ", r);
+            for (int w = 0; w < 4; w++) begin
+                round_key_num = r;
+                r_index = w;
+                #1; // small delay for combinational settle
+                $write("%h ", round_key);
+            end
+            $display("");
+        end
+	
+	#50 reset = 1;
+	// Hold reset for a few cycles
+        #50;
+        reset = 0;
+
+        start = 1;  // begin loading sequence
+        @(posedge clk);
+        start = 0; // finish start pulse
+        cipher_key = 32'h54686174;  // "That"
+        @(posedge clk);
+        cipher_key = 32'h73206D79;  // "s my"
+        @(posedge clk);
+        cipher_key = 32'h204B756E;  // " Ku n"
+        @(posedge clk);
+        cipher_key = 32'h67204675;  // "g Fu"
+        @(posedge clk);
+
+        // Wait for expansion to complete
+        wait(done);
+
+        // Print out all round keys
+
+        $display("check after reset:");
+        for (int r = 0; r <= 10; r++) begin
+            $write("Round %0d : ", r);
+            for (int w = 0; w < 4; w++) begin
+                round_key_num = r;
+                r_index = w;
+                #1; // small delay for combinational settle
+                $write("%h ", round_key);
+            end
+            $display("");
+        end
+
+	$stop;
         //$finish;
     end
 
