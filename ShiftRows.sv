@@ -3,15 +3,11 @@
 module ShiftRows(
     input [1:0] idx_row,
     input [31:0] row_in,
-    input start,
-    output done,
     output [31:0] row_out
 );
 
 reg [31:0] row_out_reg;
 assign row_out = row_out_reg;
-assign done = start;
-
 always @* begin
     case (idx_row)
         2'b00: row_out_reg = row_in; // No shift
