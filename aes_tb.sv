@@ -9,6 +9,9 @@ module aes_tb();
     reg [31:0] dword_in;
     wire [31:0] dword_out;
     wire done;
+    //test vectors from NIST
+    logic [127:0] key = 128'h000102030405060708090A0B0C0D0E0F;
+    logic [127:0] plaintext = 128'h00112233445566778899AABBCCDDEEFF;
 
     aes uut(
         .clk(clk),
@@ -33,42 +36,56 @@ module aes_tb();
     end
 
     //test sequence using a known plaintext/ciphertext pair from NIST
-    //KEY =  00000000000000000000000000000000
-    //PTEXT = ffffffffffffffffffffffffffffffff
-    //CTEXT = 3f5b8cc9ea855a0afa7347d23e8d664e
+    //KEY   = 000102030405060708090A0B0C0D0E0F
+    //PTEXT = 00112233445566778899AABBCCDDEEFF
+    //CTEXT = 69C4E0D86A7B0430D8CDB78070B4C55A
     initial begin
         //reset
         reset_n = 0;
         start_n = 1;
         start_read_n = 1;
         dword_in = 32'd0;
+        //define the key, and plaintext here
         $display("[%0t] Reset asserted", $time);
         #20;
         reset_n = 1;
         $display("[%0t] Reset deasserted", $time);
         //start encryption by triggering the start signal and then supplying the plaintext
         start_n = 0; //active low start
-        dword_in = 32'hffffffff; //first dword of plaintext
+        dword_in = plaintext[127:96]; //first dword of plaintext
         $display("[%0t] Start asserted, dword_in = %h", $time, dword_in);
         #10;
         start_n = 1; //deassert start
         $display("[%0t] Start deasserted", $time);
         #10;
-        dword_in = 32'hffffffff; //second dword of plaintext
+        dword_in = plaintext[95:64]; //second dword of plaintext
         $display("[%0t] dword_in = %h", $time, dword_in);
         #10;
-        dword_in = 32'hffffffff; //third dword of plaintext
+        dword_in = plaintext[63:32]; //third dword of plaintext
         $display("[%0t] dword_in = %h", $time, dword_in);
         #10;
-        dword_in = 32'hffffffff; //fourth dword of plaintext
+        dword_in = plaintext[31:0]; //fourth dword of plaintext
         $display("[%0t] dword_in = %h", $time, dword_in);
+        //now 4 rounds of the key input
+        dword_in = key[127:96]; //first dword of key
+        $display("[%0t] dword_in = %h", $time, dword_in);
+        #10;
+        dword_in = key[95:64]; //second dword of key
+        $display("[%0t] dword_in = %h", $time, dword_in);
+        #10;
+        dword_in = key[63:32]; //third dword of key
+        $display("[%0t] dword_in = %h", $time, dword_in);
+        #10;
+        dword_in = key[31:0]; //fourth dword of key
+        $display("[%0t] dword_in = %h", $time, dword_in);
+        #10;
         //wait for encryption to complete
-        repeat (300) @(posedge clk); //wait sufficient time for encryption to complete
+        wait(done == 1);
         $display("[%0t] Encryption done signal: %b", $time, done);
         //trigger the reading sequence
         start_read_n = 0;
         $display("[%0t] Start read asserted", $time);
-        #10;
+        #11;
         start_read_n = 1;
         $display("[%0t] Start read deasserted", $time);
         //read out the ciphertext

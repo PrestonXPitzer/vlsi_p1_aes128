@@ -13,6 +13,7 @@ module key_expand(
     logic [1:0]   load_count;   // counts which 32-bit word we are on
     logic         loading;      // high when we are loading the key
     logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
+    logic         expanded;     // high when expansion is done
 
     // Key loading state machine
     always @(posedge clk or posedge reset) begin
@@ -95,6 +96,15 @@ module key_expand(
     always_comb begin
         round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
     end
+
+    function automatic logic [31:0] get_word(
+        input logic [127:0] key,
+        input int index
+    );
+        begin
+            get_word = key[127 - (index*32) -: 32];
+        end
+    endfunction
 
     //helper functions
     // Function to generate the next round key

@@ -13,7 +13,8 @@ module state_manager (
     output reg [1:0] input_mat_idx, //2 bit index for row/column
     output reg output_mat_row_col, //0 for row, 1 for column
     output reg [1:0] output_mat_idx, //2 bit index for row/column
-    output reg key_start //signal to start key expansion
+    output reg key_start, //signal to start key expansion
+    output reg [1:0] count_4_out //2-bit output for monitoring count_4
 );
 //finite state machine for managing the state of the AES encryption/decryption process
 
@@ -33,6 +34,8 @@ localparam CTEXT_READ = 6'd9;
 reg [5:0] current_state, next_state;
 reg [3:0] round_counter, next_round_counter; //4-bit counter for 10 rounds
 reg [1:0] count_4, next_count_4; //2-bit counter for 4 rows/columns
+
+assign count_4_out = count_4;
 
 // State register
 always @(posedge clock or negedge reset_n) begin
@@ -93,6 +96,10 @@ always @(*) begin
         end
         SHIFTROWS: begin
             if (count_4 == 2'd3) begin
+                //on the last round, skip MixColumns
+                if (round_counter == 4'd9) begin
+                    next_state = ADDROUNDKEY;
+                end else
                 next_state = MIXCOLUMNS;
                 next_count_4 = 2'd0;
             end else begin
@@ -108,12 +115,18 @@ always @(*) begin
             end
         end
         ADDROUNDKEY: begin
-            if (round_counter == 4'd9) begin
-                next_state = ENCRYPTION_DONE;
+            //after AddRoundKey, either go to the next round or finish
+            if (count_4 == 2'd3) begin
+                if (round_counter == 4'd9) begin
+                    next_state = ENCRYPTION_DONE;
+                    next_count_4 = 2'd0;
+                end else begin
+                    next_state = SUBBYTES;
+                    next_round_counter = round_counter + 1;
+                    next_count_4 = 2'd0;
+                end
             end else begin
-                next_state = SUBBYTES;
-                next_round_counter = round_counter + 1;
-                next_count_4 = 2'd0;
+                next_count_4 = count_4 + 1;
             end
         end
         ENCRYPTION_DONE: begin
@@ -181,7 +194,7 @@ always @(*) begin
         end
         SUBBYTES: begin
             matrix_in_sel = 4'd1; //SubBytes operation input
-            matrix_write_enable = 1'b0;
+            matrix_write_enable = 1'b1;
             input_mat_row_col = 1'b0; //processing rows
             input_mat_idx = count_4;
             output_mat_row_col = 1'b0; //reading rows
@@ -192,9 +205,9 @@ always @(*) begin
         end
         SHIFTROWS: begin
             matrix_in_sel = 4'd2; //ShiftRows operation input
-            matrix_write_enable = 1'b0;
+            matrix_write_enable = 1'b1;
             input_mat_row_col = 1'b0; //processing rows
-            input_mat_idx = count_4;
+            input_mat_idx = count_4;    
             output_mat_row_col = 1'b0; //reading rows
             output_mat_idx = count_4;
             dbg_state = SHIFTROWS;
@@ -203,7 +216,7 @@ always @(*) begin
         end
         MIXCOLUMNS: begin
             matrix_in_sel = 4'd3; //MixColumns operation input
-            matrix_write_enable = 1'b0;
+            matrix_write_enable = 1'b1;
             input_mat_row_col = 1'b1; //processing columns
             input_mat_idx = count_4;
             output_mat_row_col = 1'b1; //reading columns
@@ -214,7 +227,7 @@ always @(*) begin
         end
         ADDROUNDKEY: begin
             matrix_in_sel = 4'd4; //AddRoundKey operation input
-            matrix_write_enable = 1'b0;
+            matrix_write_enable = 1'b1;
             input_mat_row_col = 1'b1; //processing columns
             input_mat_idx = count_4;
             output_mat_row_col = 1'b1; //reading columns

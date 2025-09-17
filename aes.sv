@@ -27,10 +27,12 @@ logic [31:0] sbox_out;
 logic [31:0] shifted_row;
 logic [31:0] mixed_col;
 logic [31:0] round_key;
-logic [1:0] round_index;
+logic [3:0] round_index;
 logic [3:0] round_key_output_sel;
 logic key_done;
 logic [31:0] ark_out;
+logic [1:0] count_4;
+logic [127:0] dbg_flattened_matrix;
 
 //instantiate all of the submodules 
 state_manager sm(
@@ -41,14 +43,15 @@ state_manager sm(
     .key_expand_done(key_done),
     .done(done),
     .dbg_state(current_state),
-    .dbg_round(round_counter),
+    .dbg_round(round_index),
     .matrix_in_sel(matrix_in_sel),      // 4 bits
     .matrix_write_enable(write_enable),
     .input_mat_row_col(row_col_sel),
     .input_mat_idx(row_col_index),      // 2 bits
     .output_mat_row_col(output_mat_row_col),
     .output_mat_idx(output_mat_idx),    // 2 bits
-    .key_start(key_start)
+    .key_start(key_start),
+    .count_4_out(count_4)                      // 2 bits (not used elsewhere)
 );
 //multiplexer for the data matrix input
 always @(*) begin
@@ -71,7 +74,8 @@ data_mat datamatrix(
     .write_enable(write_enable),
     .output_idx(output_mat_idx),        // 2 bits
     .output_row_col(output_mat_row_col),
-    .out(state_word)             // 32 bits
+    .out(state_word),           // 32 bits
+    .debug_state(dbg_flattened_matrix) // 128 bits for debugging
 );
 
 s_box sb(
@@ -90,8 +94,8 @@ key_expand ke(
     .reset(!reset_n),
     .start(key_start),
     .cipher_key(dword_in),
-    .r_index(round_index),              // 2 bits
-    .round_key_num(round_key_output_sel), // 4 bits
+    .r_index(count_4),              // 2 bits
+    .round_key_num(round_index), // which round key to output (0-10)
     .round_key(round_key),              // 32 bits
     .done(key_done)
 );
