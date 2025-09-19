@@ -32,6 +32,8 @@ localparam ENCRYPTION_DONE = 6'd8;
 localparam CTEXT_READ = 6'd9;
 localparam INIT_ADDROUNDKEY = 6'd10;
 
+localparam NUM_ROUNDS = 4'd9;
+
 reg [5:0] current_state, next_state;
 reg [3:0] round_counter, next_round_counter; //4-bit counter for 10 rounds
 reg [1:0] count_4, next_count_4; //2-bit counter for 4 rows/columns
@@ -74,7 +76,7 @@ always @(*) begin
         end
         KEY_WRITE: begin
             if (count_4 == 2'd3) begin
-                next_state = INIT_ADDROUNDKEY;
+                next_state = COMPUTE_ROUNDKEYS;
                 next_count_4 = 2'd0;
             end else begin
                 next_count_4 = count_4 + 1;
@@ -82,7 +84,7 @@ always @(*) begin
         end
         INIT_ADDROUNDKEY: begin
             if (count_4 == 2'd3) begin
-                next_state = COMPUTE_ROUNDKEYS;
+                next_state = SUBBYTES;
                 next_count_4 = 2'd0;
             end else begin
                 next_count_4 = count_4 +1;
@@ -90,7 +92,7 @@ always @(*) begin
         end
         COMPUTE_ROUNDKEYS: begin
             if (key_expand_done) begin
-                next_state = SUBBYTES;
+                next_state = INIT_ADDROUNDKEY;
                 next_round_counter = 4'd0;
                 next_count_4 = 2'd0;
             end
@@ -106,7 +108,7 @@ always @(*) begin
         SHIFTROWS: begin
             if (count_4 == 2'd3) begin
                 //on the last round, skip MixColumns
-                if (round_counter == 4'd9) begin
+                if (round_counter == NUM_ROUNDS) begin
                     next_state = ADDROUNDKEY;
                 end else
                 next_state = MIXCOLUMNS;
@@ -126,7 +128,7 @@ always @(*) begin
         ADDROUNDKEY: begin
             //after AddRoundKey, either go to the next round or finish
             if (count_4 == 2'd3) begin
-                if (round_counter == 4'd9) begin
+                if (round_counter == NUM_ROUNDS) begin
                     next_state = ENCRYPTION_DONE;
                     next_count_4 = 2'd0;
                 end else begin
@@ -183,7 +185,9 @@ always @(*) begin
             input_mat_idx = count_4;
             dbg_state = PTEXT_WRITE;
             dbg_round = round_counter;
-            key_start = 1'b0;
+            key_start = count_4 == 2'd3 ? 1'b1 : 1'b0; //prime the start signal so that
+                                                       //we start loading once we enter
+                                                       //the key write state
         end
         KEY_WRITE: begin
             matrix_in_sel = 4'bxxxx; //don't care
@@ -192,7 +196,7 @@ always @(*) begin
             input_mat_idx = count_4;
             dbg_state = KEY_WRITE;
             dbg_round = round_counter;
-            key_start = count_4 == 2'd0 ? 1'b1 : 1'b0;
+            key_start = 1'b0;
         end
         INIT_ADDROUNDKEY: begin
             matrix_in_sel = 4'd4; //AddRoundKey operation input
@@ -215,9 +219,9 @@ always @(*) begin
         SUBBYTES: begin
             matrix_in_sel = 4'd1; //SubBytes operation input
             matrix_write_enable = 1'b1;
-            input_mat_row_col = 1'b0; //processing rows
+            input_mat_row_col = 1'b1; //processing columns
             input_mat_idx = count_4;
-            output_mat_row_col = 1'b0; //reading rows
+            output_mat_row_col = 1'b1; //reading columns
             output_mat_idx = count_4;
             dbg_state = SUBBYTES;
             dbg_round = round_counter;

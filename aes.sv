@@ -5,7 +5,8 @@ module aes(
     input logic start_read_n, //active low signal to start reading the ciphertext
     input logic [31:0] dword_in,
     output logic [31:0] dword_out,
-    output logic done
+    output logic done,
+    output logic [127:0] dbg_state
 );
 
 //internal signals
@@ -60,7 +61,7 @@ always @(*) begin
         4'd1: dmatrix_in = sbox_out; //SubBytes output
         4'd2: dmatrix_in = shifted_row; //ShiftRows output
         4'd3: dmatrix_in = mixed_col; //MixColumns output
-        4'd4: dmatrix_in = round_key; //AddRoundKey output
+        4'd4: dmatrix_in = ark_out; //AddRoundKey output
         default: dmatrix_in = 32'hxxxxxxxx; //don't care
     endcase
 end
@@ -74,7 +75,8 @@ data_mat datamatrix(
     .write_enable(write_enable),
     .output_idx(output_mat_idx),        // 2 bits
     .output_row_col(output_mat_row_col),
-    .out(state_word)        // 32 bits
+    .out(state_word),      // 32 bits
+    .debug_state(dbg_state)
 );
 
 s_box sb(

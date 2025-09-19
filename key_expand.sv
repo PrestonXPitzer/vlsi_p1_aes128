@@ -6,14 +6,18 @@ module key_expand(
     input  logic [1:0]   r_index,       // which 32 bit section of the key to output
     input  logic [3:0]   round_key_num, // which round key to output (ask preston)
     output logic [31:0]  round_key,     // expanded round key
-    output logic         done           // high when round_key output is valid
+    output logic         done,           // high when round_key output is valid
+    output logic [127:0] dbg_curr_round_key
 );
+
 
     logic [127:0] key_reg;      //stores the complete cipher key
     logic [1:0]   load_count;   // counts which 32-bit word we are on
     logic         loading;      // high when we are loading the key
     logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
     logic         expanded;     // high when expansion is done
+
+    assign dbg_curr_round_key = round_keys[round_key_num];
 
     // Key loading state machine
     always @(posedge clk or posedge reset) begin
@@ -66,11 +70,11 @@ module key_expand(
                     state       <= EXPAND;
                 end
                 EXPAND: begin
-                    //done after 10 cycles
                     if (round_ctr <= 9) begin
-                        // generate next_key from current_key
-                        current_key <= next_key(current_key, round_ctr+1);
-                        round_keys[round_ctr+1] <= next_key(current_key, round_ctr+1);
+                        logic [127:0] next;
+                        next = next_key(current_key, round_ctr+1);
+                        current_key <= next;
+                        round_keys[round_ctr+1] <= next;
                         round_ctr <= round_ctr + 1;
                     end 
                     else state <= DONE;

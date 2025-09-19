@@ -9,9 +9,12 @@ module aes_tb();
     reg [31:0] dword_in;
     wire [31:0] dword_out;
     wire done;
+    wire [127:0] matrix_state;
     //test vectors from NIST
-    logic [127:0] plaintext = 128'hf34481ec3cc627bacd5dc3fb08f273e6;
-    logic [127:0] key = 128'h00000000000000000000000000000000;
+    logic [127:0] plaintext = 128'h3243f6a8885a308d313198a2e0370734;
+    logic [127:0] key =       128'h2b7e151628aed2a6abf7158809cf4f3c;
+    logic [31:0]  cycles = 0;
+    integer matrix_file;
 
     aes uut(
         .clk(clk),
@@ -20,13 +23,19 @@ module aes_tb();
         .start_read_n(start_read_n),
         .dword_in(dword_in),
         .dword_out(dword_out),
-        .done(done)
+        .done(done),
+        .dbg_state(matrix_state)
     );
 
     // VCD dump
     initial begin
         $dumpfile("aes_tb.vcd");
         $dumpvars(0, aes_tb);
+        matrix_file = $fopen("matrix_state_log.txt","w");
+        if (matrix_file == 0) begin
+            $display("Error, unable to open log file");
+            $finish;
+        end
     end
 
     //clock generation
@@ -34,6 +43,21 @@ module aes_tb();
         clk = 0;
         forever #5 clk = ~clk; //10ns clock period
     end
+        
+    task printMatrix (input [127:0] matrix_state, input [31:0] cycle);
+        begin
+            if (cycles % 4 == 2) begin
+                $fwrite(matrix_file,"Printing Matrix State for Cycle %d\n", cycle);
+                // Column 0 | Column 1 | Column 2 | Column 3
+                $fwrite(matrix_file,"%h %h %h %h\n", matrix_state[127:120], matrix_state[95:88],  matrix_state[63:56],  matrix_state[31:24]);
+                $fwrite(matrix_file,"%h %h %h %h\n", matrix_state[119:112], matrix_state[87:80],  matrix_state[55:48],  matrix_state[23:16]);
+                $fwrite(matrix_file,"%h %h %h %h\n", matrix_state[111:104], matrix_state[79:72],  matrix_state[47:40],  matrix_state[15:8]);
+                $fwrite(matrix_file,"%h %h %h %h\n", matrix_state[103:96],  matrix_state[71:64],  matrix_state[39:32],  matrix_state[7:0]);
+                $fwrite(matrix_file,"----------------------\n");
+            end
+        end
+    endtask
+
 
     //test sequence using a known plaintext/ciphertext pair from NIST
     //KEY   = 000102030405060708090A0B0C0D0E0F
@@ -67,6 +91,7 @@ module aes_tb();
         dword_in = plaintext[31:0]; //fourth dword of plaintext
         $display("[%0t] dword_in = %h", $time, dword_in);
         //now 4 rounds of the key input
+        #10;
         dword_in = key[127:96]; //first dword of key
         $display("[%0t] dword_in = %h", $time, dword_in);
         #10;
@@ -80,7 +105,12 @@ module aes_tb();
         $display("[%0t] dword_in = %h", $time, dword_in);
         #10;
         //wait for encryption to complete
-        wait(done == 1);
+        while(done != 1) begin
+            $display("printing cycle %d", cycles);
+            printMatrix(matrix_state, cycles);
+            cycles = cycles + 1;
+            #10;
+        end
         $display("[%0t] Encryption done signal: %b", $time, done);
         //trigger the reading sequence
         start_read_n = 0;
