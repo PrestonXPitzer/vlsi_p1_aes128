@@ -1,0 +1,32 @@
+by default IDLE
+once start_write_n, PTEXT_WRITE for 4 cycles and then KEY_WRITE for 4 cycles, then COMPUTE_ROUNDKEYS
+once key_expand_done, 9 rounds of...
+SUBBYTES, SHIFTROWS, MIXCOLUMNS, ADDROUNDKEY
+then 1 round of 
+SUBBYTES, SHIFTROWS, ADDROUNDKEY
+then go to ENCRYPTION_DONE,
+wait for start_read_n, then 4 rounds of CTEXT_READ then return to IDLE
+
+in IDLE:
+    everything off
+in PTEXT_WRITE:
+    load column (count_4) with the input data_word (input sel 0)
+in KEY_WRITE: 
+    load chunk (count_4) with the input data_word
+in COMPUTE_ROUNDKEYS:
+    simply await the done signal key_expand_done (must be computed a priori)
+in SUBBYTES:
+    write column (count_4) with the subbytes input (sel 1) 
+in SHIFTROWS:
+    write row (count_4) with the shiftrows input (sel 2)
+in MIXCOLUMNS:
+    write column (count_4) with the mixcolumns input (sel 3)
+in ADDROUNDKEY:
+    write column (count_4) with the ARK input (sel 4)
+in ENCRYPTION_DONE
+    everything off
+in CTEXT_READ:
+    show column (count_4) to the output 
+
+
+
