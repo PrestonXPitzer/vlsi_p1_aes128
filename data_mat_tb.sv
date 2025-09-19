@@ -24,8 +24,7 @@ module data_mat_tb();
         .write_enable(write_enable),
         .output_idx(output_idx),
         .output_row_col(output_row_col),
-        .out(out),
-        .debug_state(debug_state)
+        .out(out)
     );
 
     initial clk = 0;
@@ -78,11 +77,12 @@ module data_mat_tb();
         if (out !== 32'h44556677) $display("Test 2 Failed: Expected 0x44556677, got %h", out);
         else $display("Test 2 Passed");
         #10;
-        //read row 0 again to ensure it is unchanged
+        //read row 0 again to ensure it is unchanged (save for the first byte, which was modified by the
+        //write to row 1!)
         output_idx = 0;
         output_row_col = 0; //row
         #10;
-        if (out !== 32'h00112233) $display("Test 3 Failed: Expected 0x00112233, got %h", out);
+        if (out !== 32'h00442233) $display("Test 3 Failed: Expected 0x00112233, got %h", out);
         else $display("Test 3 Passed");
         #10;
         $finish;

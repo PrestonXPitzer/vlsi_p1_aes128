@@ -16,12 +16,17 @@ module s_box_tb();
     initial begin
         // test case 1
         row_in = 32'h00112233; // Input bytes: 00, 11, 22, 33
-        #1;
+        #10;
         if (row_out !== 32'h638293c3) // Expected output bytes
             $display("Test case 1 failed: expected 638292c3, got %h", row_out);
         else
-            $display("Test case 1 passed");
-
+            $display("Test case 1 passed: in: %h, got %h ", row_in, row_out);
+        row_in = 32'hfcfdfeff;
+        #10
+        if (row_out !== 32'hb054bb16) // Expected output bytes
+            $display("Test case 2 failed: expected 32'hb054bb16, got %h", row_out);
+        else
+            $display("Test case 2 passed: in: %h, got %h ",row_in, row_out);
         $finish;
     end
 

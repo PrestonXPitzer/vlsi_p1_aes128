@@ -8,8 +8,7 @@ module data_mat (
     input wire write_enable, //enable signal for writing
     input wire [1:0] output_idx, //index for either row or column
     input wire output_row_col, //0 for row, 1 for column
-    output reg [31:0] out, //reg to hold output data until next read 
-    output wire [127:0] debug_state //for debugging, output the entire state matrix
+    output reg [31:0] out //reg to hold output data until next read 
 );
 
     //internal 4x4 matrix of bytes, represented as a 2D array

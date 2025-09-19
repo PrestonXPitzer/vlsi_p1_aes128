@@ -10,8 +10,8 @@ module aes_tb();
     wire [31:0] dword_out;
     wire done;
     //test vectors from NIST
-    logic [127:0] key = 128'h000102030405060708090A0B0C0D0E0F;
-    logic [127:0] plaintext = 128'h00112233445566778899AABBCCDDEEFF;
+    logic [127:0] plaintext = 128'hf34481ec3cc627bacd5dc3fb08f273e6;
+    logic [127:0] key = 128'h00000000000000000000000000000000;
 
     aes uut(
         .clk(clk),
