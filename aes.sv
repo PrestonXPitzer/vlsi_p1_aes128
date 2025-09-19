@@ -74,8 +74,7 @@ data_mat datamatrix(
     .write_enable(write_enable),
     .output_idx(output_mat_idx),        // 2 bits
     .output_row_col(output_mat_row_col),
-    .out(state_word),           // 32 bits
-    .debug_state(dbg_flattened_matrix) // 128 bits for debugging
+    .out(state_word)        // 32 bits
 );
 
 s_box sb(

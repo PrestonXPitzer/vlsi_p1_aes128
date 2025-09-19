@@ -81,8 +81,12 @@ always @(*) begin
             end
         end
         INIT_ADDROUNDKEY: begin
-            next_state = COMPUTE_ROUNDKEYS;
-            next_count_4 = 2'd0;
+            if (count_4 == 2'd3) begin
+                next_state = COMPUTE_ROUNDKEYS;
+                next_count_4 = 2'd0;
+            end else begin
+                next_count_4 = count_4 +1;
+            end
         end
         COMPUTE_ROUNDKEYS: begin
             if (key_expand_done) begin
@@ -175,7 +179,7 @@ always @(*) begin
         PTEXT_WRITE: begin
             matrix_in_sel = 4'd0; //plaintext input
             matrix_write_enable = 1'b1;
-            input_mat_row_col = 1'b0; //writing rows
+            input_mat_row_col = 1'b1; //writing columns
             input_mat_idx = count_4;
             dbg_state = PTEXT_WRITE;
             dbg_round = round_counter;
@@ -193,9 +197,9 @@ always @(*) begin
         INIT_ADDROUNDKEY: begin
             matrix_in_sel = 4'd4; //AddRoundKey operation input
             matrix_write_enable = 1'b1;
-            input_mat_row_col = 1'b0; //writing rows
+            input_mat_row_col = 1'b1; //writing cols
             input_mat_idx = count_4;
-            output_mat_row_col = 1'b0; //reading rows
+            output_mat_row_col = 1'b1; //reading cols
             output_mat_idx = count_4;
             dbg_state = INIT_ADDROUNDKEY;
             dbg_round = 4'd0;
@@ -263,7 +267,7 @@ always @(*) begin
         CTEXT_READ: begin
             matrix_in_sel = 4'bxxxx; //don't care
             matrix_write_enable = 1'b0;
-            output_mat_row_col = 1'b0; //reading rows
+            output_mat_row_col = 1'b1; //reading columns
             output_mat_idx = count_4;
             dbg_state = CTEXT_READ;
             dbg_round = round_counter;
