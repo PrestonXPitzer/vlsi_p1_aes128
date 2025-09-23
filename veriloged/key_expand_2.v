@@ -1,21 +1,22 @@
-module key_expand(
-    input  logic        clk,
-    input  logic        reset,
-    input  logic        start,          //one cycle start pulse sent begin key expansion
-    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
-    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
-    output logic [31:0]  round_key,     // expanded round key
-    output logic         done,           // high when round_key output is valid
-    output logic [127:0] dbg_curr_round_key
+module key_expand (
+    input         clk,
+    input         reset,
+    input         start,          // one cycle start pulse to begin key expansion
+    input  [31:0] cipher_key,     // initial key pulled in 4 cycles (32-bit each)
+    input  [1:0]  r_index,        // which 32-bit section of the key to output
+    input  [3:0]  round_key_num,  // which round key to output
+    output reg [31:0] round_key,  // expanded round key
+    output reg    done,           // high when round_key output is valid
+    output [127:0] dbg_curr_round_key
 );
 
+    reg [127:0] key_reg;      // stores the complete cipher key
+    reg [1:0]   load_count;   // counts which 32-bit word we are on
+    reg         loading;      // high when we are loading the key
+    reg         expanded;     // high when expansion is done
 
-    logic [127:0] key_reg;      //stores the complete cipher key
-    logic [1:0]   load_count;   // counts which 32-bit word we are on
-    logic         loading;      // high when we are loading the key
-    logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
-    logic         expanded;     // high when expansion is done
+    // Flattened 2D array: 11 round keys (0 = initial key, 10 = last)
+    reg [127:0] round_keys [0:10];
 
     assign dbg_curr_round_key = round_keys[round_key_num];
 
@@ -47,90 +48,94 @@ module key_expand(
         end
     end
 
+    // FSM states
+    localparam IDLE   = 2'd0;
+    localparam EXPAND = 2'd1;
+    localparam DONE_S = 2'd2;
 
-    //varibles for 11 stage round key expansion:
-    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
-    state_t state;
+    reg [1:0] state;
+    reg [3:0] round_ctr;
+    reg [127:0] current_key;
+    reg [127:0] next;   // moved out of always (no block-local vars in Verilog-2001)
 
-    logic [3:0] round_ctr;
-    logic [127:0] current_key;
-
-    //key expansion code
-    always_ff @(posedge clk or posedge reset) begin
+    // Key expansion FSM
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
-            state <= IDLE;
-            round_ctr <= 0;
-            done <= 0;
+            state      <= IDLE;
+            round_ctr  <= 0;
+            done       <= 0;
         end else begin
             case (state)
                 IDLE: if (!loading) begin
-                    current_key <= key_reg;  // initial key
+                    current_key     <= key_reg;  // initial key
                     round_keys[0]   <= key_reg;
-                    round_ctr   <= 0;
-                    state       <= EXPAND;
+                    round_ctr       <= 0;
+                    state           <= EXPAND;
                 end
                 EXPAND: begin
                     if (round_ctr <= 9) begin
-                        logic [127:0] next;
                         next = next_key(current_key, round_ctr+1);
                         current_key <= next;
                         round_keys[round_ctr+1] <= next;
-                        round_ctr <= round_ctr + 1;
-                    end 
-                    else state <= DONE;
+                        round_ctr   <= round_ctr + 1;
+                    end else begin
+                        state <= DONE_S;
+                    end
                 end
-                DONE: begin
-                    done <= 1;
+                DONE_S: begin
+                    done  <= 1;
                     state <= IDLE;
                 end
             endcase
         end
 
-        //in case of another start pulse
-        if(loading) begin
-            done <= 1'd0;
+        // in case of another start pulse
+        if (loading) begin
+            done      <= 1'b0;
             round_ctr <= 0;
-            state <= IDLE;
+            state     <= IDLE;
         end
     end
-        
-    
 
-    //process for returning the round keys
-    always_comb begin
-        round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
+    // Process for returning the round keys (no "-:" slicing in Verilog-2001)
+    always @(*) begin
+        case (r_index)
+            2'd0: round_key = round_keys[round_key_num][127:96];
+            2'd1: round_key = round_keys[round_key_num][95:64];
+            2'd2: round_key = round_keys[round_key_num][63:32];
+            2'd3: round_key = round_keys[round_key_num][31:0];
+            default: round_key = 32'h00000000;
+        endcase
     end
 
-    function automatic logic [31:0] get_word(
-        input logic [127:0] key,
-        input int index
-    );
+    // Function: get one 32-bit word from a 128-bit key
+    function [31:0] get_word;
+        input [127:0] key;
+        input [31:0]  index;
         begin
-            get_word = key[127 - (index*32) -: 32];
+            case (index)
+                0: get_word = key[127:96];
+                1: get_word = key[95:64];
+                2: get_word = key[63:32];
+                3: get_word = key[31:0];
+                default: get_word = 32'h00000000;
+            endcase
         end
     endfunction
 
-    //helper functions
-    // Function to generate the next round key
-    function automatic logic [127:0] next_key(
-            input logic [127:0] prev_key,
-            input int round_num
-        );
-            logic [31:0] temp, w0, w1, w2, w3;
+    // Function: generate the next round key
+    function [127:0] next_key;
+        input [127:0] prev_key;
+        input [31:0]  round_num;
+        reg [31:0] temp, w0, w1, w2, w3;
         begin
-            // pull last word of previous round key
             temp = get_word(prev_key, 3);
-
-            // Special schedule core every 4th word
             temp = sub_word(rot_word(temp)) ^ rcon(round_num);
-
-            // Build new round key word by word
             w0 = get_word(prev_key, 0) ^ temp;
             w1 = get_word(prev_key, 1) ^ w0;
             w2 = get_word(prev_key, 2) ^ w1;
             w3 = get_word(prev_key, 3) ^ w2;
-
-            return {w0, w1, w2, w3};
+            next_key = {w0, w1, w2, w3};
         end
     endfunction
 
@@ -175,8 +180,7 @@ module key_expand(
         end
     endfunction
 
-    // S-box lookup table (AES standard)
-    function [7:0] sbox_lookup;
+function [7:0] sbox_lookup;
         input [7:0] byte_in;
         begin
             case (byte_in)

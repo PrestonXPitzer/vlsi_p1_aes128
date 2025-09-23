@@ -14,7 +14,7 @@ module state_manager (
     output reg output_mat_row_col, //0 for row, 1 for column
     output reg [1:0] output_mat_idx, //2 bit index for row/column
     output reg key_start, //signal to start key expansion
-    output reg [1:0] count_4_out //2-bit output for monitoring count_4
+    output wire [1:0] count_4_out //2-bit output for monitoring count_4
 );
 //finite state machine for managing the state of the AES encryption/decryption process
 

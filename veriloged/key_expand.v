@@ -1,21 +1,21 @@
 module key_expand(
-    input  logic        clk,
-    input  logic        reset,
-    input  logic        start,          //one cycle start pulse sent begin key expansion
-    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
-    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
-    output logic [31:0]  round_key,     // expanded round key
-    output logic         done,           // high when round_key output is valid
-    output logic [127:0] dbg_curr_round_key
+    input  wire        clk,
+    input  wire        reset,
+    input  wire        start,          //one cycle start pulse sent begin key expansion
+    input  wire [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
+    input  wire [1:0]   r_index,       // which 32 bit section of the key to output
+    input  wire [3:0]   round_key_num, // which round key to output (ask preston)
+    output wire [31:0]  round_key,     // expanded round key
+    output wire         done,           // high when round_key output is valid
+    output wire [127:0] dbg_curr_round_key
 );
 
 
-    logic [127:0] key_reg;      //stores the complete cipher key
-    logic [1:0]   load_count;   // counts which 32-bit word we are on
-    logic         loading;      // high when we are loading the key
-    logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
-    logic         expanded;     // high when expansion is done
+    reg [127:0] key_reg;      //stores the complete cipher key
+    reg [1:0]   load_count;   // counts which 32-bit word we are on
+    reg         loading;      // high when we are loading the key
+    reg [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
+    reg         expanded;     // high when expansion is done
 
     assign dbg_curr_round_key = round_keys[round_key_num];
 
@@ -49,14 +49,17 @@ module key_expand(
 
 
     //varibles for 11 stage round key expansion:
-    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
-    state_t state;
+    localparam IDLE = 2'd0;
+    localparam LOAD = 2'd0;
+    localparam EXPAND = 2'd0;
+    localparam DONE = 2'd0;
+    reg [1:0] state;
 
-    logic [3:0] round_ctr;
-    logic [127:0] current_key;
+    reg [3:0] round_ctr;
+    reg [127:0] current_key;
 
     //key expansion code
-    always_ff @(posedge clk or posedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
             round_ctr <= 0;
@@ -71,7 +74,7 @@ module key_expand(
                 end
                 EXPAND: begin
                     if (round_ctr <= 9) begin
-                        logic [127:0] next;
+                        reg [127:0] next;
                         next = next_key(current_key, round_ctr+1);
                         current_key <= next;
                         round_keys[round_ctr+1] <= next;
@@ -97,13 +100,13 @@ module key_expand(
     
 
     //process for returning the round keys
-    always_comb begin
+    always @(*) begin
         round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
     end
 
-    function automatic logic [31:0] get_word(
-        input logic [127:0] key,
-        input int index
+    function reg [31:0] get_word(
+        input reg [127:0] key,
+        input reg [31:0]  index
     );
         begin
             get_word = key[127 - (index*32) -: 32];
@@ -112,15 +115,15 @@ module key_expand(
 
     //helper functions
     // Function to generate the next round key
-    function automatic logic [127:0] next_key(
-            input logic [127:0] prev_key,
-            input int round_num
+    function reg [127:0] next_key(
+            input reg [127:0] prev_key,
+            input reg [31:0] round_num
         );
-            logic [31:0] temp, w0, w1, w2, w3;
+            reg [31:0] temp, w0, w1, w2, w3;
         begin
             // pull last word of previous round key
             temp = get_word(prev_key, 3);
-
+                                
             // Special schedule core every 4th word
             temp = sub_word(rot_word(temp)) ^ rcon(round_num);
 
@@ -130,7 +133,7 @@ module key_expand(
             w2 = get_word(prev_key, 2) ^ w1;
             w3 = get_word(prev_key, 3) ^ w2;
 
-            return {w0, w1, w2, w3};
+            next_key = {w0, w1, w2, w3};
         end
     endfunction
 
