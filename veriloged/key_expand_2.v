@@ -56,7 +56,7 @@ module key_expand (
     reg [1:0] state;
     reg [3:0] round_ctr;
     reg [127:0] current_key;
-    reg [127:0] next;   // moved out of always (no block-local vars in Verilog-2001)
+    reg [127:0] next;
 
     // Key expansion FSM
     always @(posedge clk or posedge reset) begin
@@ -97,7 +97,6 @@ module key_expand (
         end
     end
 
-    // Process for returning the round keys (no "-:" slicing in Verilog-2001)
     always @(*) begin
         case (r_index)
             2'd0: round_key = round_keys[round_key_num][127:96];
