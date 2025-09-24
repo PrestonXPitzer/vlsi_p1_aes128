@@ -9,15 +9,17 @@ module data_mat (
     input wire [1:0] output_idx, //index for either row or column
     input wire output_row_col, //0 for row, 1 for column
     output reg [31:0] out, //reg to hold output data until next read 
-    output wire [127:0] debug_state //for debugging, output the entire state matrix
+    output [127:0] debug_state
 );
 
     //internal 4x4 matrix of bytes, represented as a 2D array
     reg [7:0] state [0:3][0:3];
-    assign debug_state = {state[0][0], state[0][1], state[0][2], state[0][3],
-                          state[1][0], state[1][1], state[1][2], state[1][3],
-                          state[2][0], state[2][1], state[2][2], state[2][3],
-                          state[3][0], state[3][1], state[3][2], state[3][3]};
+    assign debug_state = {
+        state[0][0], state[1][0], state[2][0], state[3][0],
+        state[0][1], state[1][1], state[2][1], state[3][1],
+        state[0][2], state[1][2], state[2][2], state[3][2],
+        state[0][3], state[1][3], state[2][3], state[3][3]
+    };
 
     //synchronous write operation
     always @(posedge clk or negedge reset_n) begin

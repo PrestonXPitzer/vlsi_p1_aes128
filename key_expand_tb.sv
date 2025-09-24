@@ -13,6 +13,7 @@ module tb_key_expand;
     logic done;
 
     // Instantiate DUT
+
     key_expand dut (
         .clk(clk),
         .reset(reset),
@@ -40,17 +41,17 @@ module tb_key_expand;
         // Hold reset for a few cycles
         #50;
         reset = 0;
-
+/*
         start = 1;  // begin loading sequence
         @(posedge clk);
         start = 0; // finish start pulse
-        cipher_key = 32'h54686174;  // "That"
+        cipher_key = 32'h2b731516;  // "That"
         @(posedge clk);
-        cipher_key = 32'h73206D79;  // "s my"
+        cipher_key = 32'h28aed2a6;  // "s my"
         @(posedge clk);
-        cipher_key = 32'h204B756E;  // " Ku n"
+        cipher_key = 32'habf71588;  // " Ku n"
         @(posedge clk);
-        cipher_key = 32'h67204675;  // "g Fu"
+        cipher_key = 32'h09cf4f3c;  // "g Fu"
         @(posedge clk);
 
 
@@ -181,7 +182,7 @@ module tb_key_expand;
             end
             $display("");
         end
-
+*/
          #50;
         @(posedge clk);
         start = 1;  // begin loading sequence for new key
@@ -212,8 +213,8 @@ module tb_key_expand;
             $display("");
         end
 
-	$stop;
-        //$finish;
+	//$stop;
+    $finish;
     end
 
 endmodule

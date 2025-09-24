@@ -1,39 +1,38 @@
 module aes(
-    input logic clk,
-    input logic reset_n,
-    input logic start_n,
-    input logic start_read_n, //active low signal to start reading the ciphertext
-    input logic [31:0] dword_in,
-    output logic [31:0] dword_out,
-    output logic done,
-    output logic [127:0] dbg_state
+    input  clk,
+    input  reset_n,
+    input  start_n,
+    input  start_read_n, //active low signal to start reading the ciphertext
+    input  [31:0] dword_in,
+    output [31:0] dword_out,
+    output done,
+    output [127:0] dbg_state
 );
 
 //internal signals
-logic [5:0] current_state;
-logic [3:0] round_counter;
+wire [5:0] current_state;
+wire [3:0] round_counter;
 
 // Add correct width declarations for all signals used in submodules
-logic [3:0] matrix_in_sel;
-logic write_enable;
-logic row_col_sel;
-logic output_mat_row_col;
-logic [1:0] row_col_index;
-logic [1:0] output_mat_idx;
-logic key_start;
-
-logic [31:0] dmatrix_in;
-logic [31:0] state_word;
-logic [31:0] sbox_out;
-logic [31:0] shifted_row;
-logic [31:0] mixed_col;
-logic [31:0] round_key;
-logic [3:0] round_index;
-logic [3:0] round_key_output_sel;
-logic key_done;
-logic [31:0] ark_out;
-logic [1:0] count_4;
-logic [127:0] dbg_flattened_matrix;
+wire [3:0] matrix_in_sel;
+wire write_enable;
+wire row_col_sel;
+wire output_mat_row_col;
+wire [1:0] row_col_index;
+wire [1:0] output_mat_idx;
+wire key_start;
+reg [31:0] dmatrix_in;
+wire [31:0] state_word;
+wire [31:0] sbox_out;
+wire [31:0] shifted_row;
+wire [31:0] mixed_col;
+wire [31:0] round_key;
+wire [3:0] round_index;
+wire [3:0] round_key_output_sel;
+wire key_done;
+wire [31:0] ark_out;
+wire [1:0] count_4;
+wire [127:0] dbg_flattened_matrix;
 
 //instantiate all of the submodules 
 state_manager sm(

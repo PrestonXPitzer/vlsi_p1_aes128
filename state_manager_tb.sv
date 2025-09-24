@@ -9,14 +9,16 @@ module state_manager_tb;
     reg key_expand_done;
 
     // Outputs
-    wire done;
     wire [5:0] dbg_state;
     wire [3:0] dbg_round;
     wire [3:0] matrix_in_sel;
     wire matrix_write_enable;
-    wire mat_row_col;
-    wire mat_read_write;
-    wire [1:0] mat_idx;
+    wire input_mat_row_col;
+    wire [1:0] input_mat_idx;
+    wire output_mat_row_col;
+    wire [1:0] output_mat_idx;
+    wire key_start;
+    wire [1:0] count_4_out;
 
     // Instantiate the DUT
     state_manager dut (
@@ -30,9 +32,11 @@ module state_manager_tb;
         .dbg_round(dbg_round),
         .matrix_in_sel(matrix_in_sel),
         .matrix_write_enable(matrix_write_enable),
-        .mat_row_col(mat_row_col),
-        .mat_read_write(mat_read_write),
-        .mat_idx(mat_idx)
+        .input_mat_row_col(input_mat_row_col),
+        .output_mat_row_col(output_mat_row_col),
+        .output_mat_idx(output_mat_idx),
+        .key_start(key_start),
+        .count_4_out(count_4_out)
     );
 
     // Clock generation
@@ -70,8 +74,9 @@ module state_manager_tb;
         key_expand_done = 0;
 
         // Wait for rounds to complete
-        repeat (160) @(posedge clock);
+        wait (done == 1);
 
+        #10;
         // Start read (active low)
         start_read_n = 0;
         #10;

@@ -1,33 +1,37 @@
 module key_expand(
-    input  logic        clk,
-    input  logic        reset,
-    input  logic        start,          //one cycle start pulse sent begin key expansion
-    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
-    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
-    output logic [31:0]  round_key,     // expanded round key
-    output logic         done           // high when round_key output is valid
+    input  wire        clk,
+    input  wire        reset,
+    input  wire        start,          //one cycle start pulse sent begin key expansion
+    input  wire [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
+    input  wire [1:0]   r_index,       // which 32 bit section of the key to output
+    input  wire [3:0]   round_key_num, // which round key to output (ask preston)
+    output wire [31:0]  round_key,     // expanded round key
+    output wire         done,           // high when round_key output is valid
+    output wire [127:0] dbg_curr_round_key
 );
 
-    logic [127:0] key_reg;      //stores the complete cipher key
-    logic [1:0]   load_count;   // counts which 32-bit word we are on
-    logic         loading;      // high when we are loading the key
-    logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
 
+    reg [127:0] key_reg;      //stores the complete cipher key
+    reg [1:0]   load_count;   // counts which 32-bit word we are on
+    reg         loading;      // high when we are loading the key
+    reg [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
+    reg         expanded;     // high when expansion is done
 
-    logic [31:0] w [0:43]; // 44 words total (AES-128)
+    assign dbg_curr_round_key = round_keys[round_key_num];
+
     // Key loading state machine
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             key_reg    <= 128'd0;
             load_count <= 2'd0;
             loading    <= 1'b0;
+            expanded   <= 1'b0;
         end else begin
             if (start) begin
                 load_count <= 2'd0;
                 loading    <= 1'b1;
-            end 
-            else if (loading) begin
+                expanded   <= 1'b0;
+            end else if (loading) begin
                 case (load_count)
                     2'd0: key_reg[127:96] <= cipher_key;
                     2'd1: key_reg[95:64]  <= cipher_key;
@@ -36,137 +40,102 @@ module key_expand(
                 endcase
                 if (load_count == 2'd3) begin
                     loading  <= 1'b0;
-                    load_count <= 2'b00;
+                    expanded <= 1'b0;
                 end
-                else load_count <= load_count + 1'b1;
+                load_count <= load_count + 1'b1;
             end
         end
     end
 
 
     //varibles for 11 stage round key expansion:
-    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
-    state_t state;
+    localparam IDLE = 2'd0;
+    localparam LOAD = 2'd0;
+    localparam EXPAND = 2'd0;
+    localparam DONE = 2'd0;
+    reg [1:0] state;
 
-    logic [5:0] round_ctr; //edited
-    logic [127:0] current_key;
-
+    reg [3:0] round_ctr;
+    reg [127:0] current_key;
 
     //key expansion code
-    always_ff @(posedge clk or posedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
             round_ctr <= 0;
             done <= 0;
-        end 
-        else if (start)begin 
-            state   <= LOAD;
-            done <= 0;
-        end
-        else begin
+        end else begin
             case (state)
-                IDLE: begin
-                    state <= IDLE;
-                end
-                LOAD:begin
-                    if (!loading) begin
-                        done <= 0;
-                        current_key <= key_reg;  // initial key
-                        round_keys[0]   <= key_reg;
-                        w[0] <= key_reg[127:96];
-                        w[1] <= key_reg[95:64];
-                        w[2] <= key_reg[63:32];
-                        w[3] <= key_reg[31:0];
-                        round_ctr   <= 4;
-                        state       <= EXPAND;
-                    end 
+                IDLE: if (!loading) begin
+                    current_key <= key_reg;  // initial key
+                    round_keys[0]   <= key_reg;
+                    round_ctr   <= 0;
+                    state       <= EXPAND;
                 end
                 EXPAND: begin
-                    if (round_ctr <= 43) begin/*
-                        w[round_ctr] <= next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2); //(>>2 equiv to divide by 4)
+                    if (round_ctr <= 9) begin
+                        reg [127:0] next;
+                        next = next_key(current_key, round_ctr+1);
+                        current_key <= next;
+                        round_keys[round_ctr+1] <= next;
                         round_ctr <= round_ctr + 1;
-
-                        // Print intermediate values for debugging
-                    $display("Time %0t | i=%0d | prev_word=%h | wordNk=%h | temp (after sub/rot/rcon)=%h | w[i]=%h",
-                            $time, round_ctr, w[round_ctr-1], w[round_ctr-4], 
-                            (round_ctr % 4 == 0) ? (sub_word(rot_word(w[round_ctr-1])) ^ rcon(round_ctr>>2)) : w[round_ctr-1],
-                            next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2));*/
-                        logic [31:0] temp;
-                        logic [31:0] after_rot;
-                        logic [31:0] after_sub_rcon;
-                        logic [31:0] new_word;
-
-                        temp = w[round_ctr-1];
-                        after_rot = (round_ctr % 4 == 0) ? rot_word(temp) : temp;
-                        after_sub_rcon = (round_ctr % 4 == 0) ? (sub_word(after_rot) ^ rcon(round_ctr>>2)) : temp;
-                        new_word = w[round_ctr-4] ^ after_sub_rcon;
-                        w[round_ctr] <= new_word;
-                        
-                        if (round_ctr == 4) begin
-                            // Print header once before first expansion step
-                            $display("i temp    ROTWORD() SUBWORD() Rcon SUBWD^Rcon w[i]");
-                        end
-                        $display("%0d %h %h %h %h %h %h",
-                            round_ctr,
-                            temp,                 // temp (prev_word)
-                            after_rot,            // after ROTWORD
-                            sub_word(after_rot),  // after SUBWORD
-                            rcon(round_ctr>>2),   // Rcon[i/Nk]
-                            after_sub_rcon,       // after SUBWORD ^ Rcon
-                            new_word              // final w[i]
-                        );
-
-                        round_ctr <= round_ctr + 1;
-
-                    end else begin
-                        // pack round keys into 128-bit blocks
-                        for (int r = 0; r <= 10; r++) begin
-                            round_keys[r] <= {w[4*r], w[4*r+1], w[4*r+2], w[4*r+3]};
-                        end
-                        state <= DONE;
-                    end
+                    end 
+                    else state <= DONE;
                 end
                 DONE: begin
                     done <= 1;
-                    state <= IDLE; //stay in done until new start pulse
+                    state <= IDLE;
                 end
             endcase
+        end
+
+        //in case of another start pulse
+        if(loading) begin
+            done <= 1'd0;
+            round_ctr <= 0;
+            state <= IDLE;
         end
     end
         
     
 
     //process for returning the round keys
-    always_comb begin
+    always @(*) begin
         round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
     end
 
-
-    function automatic logic [31:0] next_word(
-        input int i,
-        input logic [31:0] prev_word,
-        input logic [31:0] wordNk,
-        input int round_num
-        );
-            logic [31:0] temp;
-        begin
-            temp = prev_word;
-            if (i % 4 == 0) begin
-                temp = sub_word(rot_word(temp)) ^ rcon(round_num);
-            end
-            next_word = wordNk ^ temp;
-        end
-    endfunction
-
-    function automatic logic [31:0] get_word(
-        input logic [127:0] key,
-        input int index
+    function reg [31:0] get_word(
+        input reg [127:0] key,
+        input reg [31:0]  index
     );
         begin
             get_word = key[127 - (index*32) -: 32];
         end
     endfunction
 
+    //helper functions
+    // Function to generate the next round key
+    function reg [127:0] next_key(
+            input reg [127:0] prev_key,
+            input reg [31:0] round_num
+        );
+            reg [31:0] temp, w0, w1, w2, w3;
+        begin
+            // pull last word of previous round key
+            temp = get_word(prev_key, 3);
+                                
+            // Special schedule core every 4th word
+            temp = sub_word(rot_word(temp)) ^ rcon(round_num);
+
+            // Build new round key word by word
+            w0 = get_word(prev_key, 0) ^ temp;
+            w1 = get_word(prev_key, 1) ^ w0;
+            w2 = get_word(prev_key, 2) ^ w1;
+            w3 = get_word(prev_key, 3) ^ w2;
+
+            next_key = {w0, w1, w2, w3};
+        end
+    endfunction
 
     // RotWord: rotate left by 8 bits
     function [31:0] rot_word;
