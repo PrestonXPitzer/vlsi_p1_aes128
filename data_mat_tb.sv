@@ -3,64 +3,88 @@
 `timescale 1ns/1ps
 
 module data_mat_tb();
+    reg clk;
+    reg [1:0] input_idx;
+    reg input_row_col;
+    reg [1:0] output_idx;
+    reg output_row_col;
+    reg write_enable;
     reg [31:0] col_in;
-    reg [1:0] idx; //index for either row or column
-    reg row_col; //0 for row, 1 for column
-    reg read_write; //0 for read, 1 for write
-    reg write_enable; //enable signal for writing
-    wire [31:0] out; //reg to hold output data until next read
+    wire [31:0] out;
+    wire [127:0] debug_state;
+    reg reset_n;
+
     // Instantiate the DUT
     data_mat dut (
+        .clk(clk),
+        .reset_n(reset_n),
         .col_in(col_in),
-        .idx(idx),
-        .row_col(row_col),
-        .read_write(read_write),
+        .input_idx(input_idx),
+        .input_row_col(input_row_col),
         .write_enable(write_enable),
+        .output_idx(output_idx),
+        .output_row_col(output_row_col),
         .out(out)
     );
 
-    task test_data_mat;
-        input [31:0] in_data;
-        input [1:0] in_idx;
-        input in_row_col;
-        input in_read_write;
-        input in_write_enable;
-        input [31:0] expected_out;
-        begin
-            // Apply inputs
-            col_in = in_data;
-            idx = in_idx;
-            row_col = in_row_col;
-            read_write = in_read_write;
-            write_enable = in_write_enable;
+    initial clk = 0;
+    always #5 clk = ~clk;
 
-            // Check output
-            #1; // Small delay to allow combinational logic to settle
-            if (out !== expected_out) begin
-                $display("Test failed for col_in=%h, idx=%b, row_col=%b, read_write=%b, write_enable=%b: expected %h, got %h", in_data, in_idx, in_row_col, in_read_write, in_write_enable, expected_out, out);
-            end else begin
-                $display("Test passed for col_in=%h, idx=%b, row_col=%b, read_write=%b, write_enable=%b: got %h", in_data, in_idx, in_row_col, in_read_write, in_write_enable, out);
-            end
-        end
-    endtask
-
-    // test case 1, write into column 0, and check that we got it back
+    //vcddump
     initial begin
-        // Test case 1: Write to column 0
-        test_data_mat(32'h11223344, 2'b00, 1'b1, 1'b1, 1'b1, 32'hxxxxxxxx); // writing, output is don't care
-        // Read back column 0
-        test_data_mat(32'h00000000, 2'b00, 1'b1, 1'b0, 1'b0, 32'h11223344); // reading, expect to get what we wrote
+        $dumpfile("data_mat_tb.vcd");
+        $dumpvars(0, data_mat_tb);
+    end
 
-        // Test case 2: Write to row 2
-        test_data_mat(32'h55667788, 2'b10, 1'b0, 1'b1, 1'b1, 32'hxxxxxxxx); // writing, output is don't care
-        // Read back row 2
-        test_data_mat(32'h00000000, 2'b10, 1'b0, 1'b0, 1'b0, 32'h55667788); // reading, expect to get what we wrote
-
-        // Test case 3: Write to column 3
-        test_data_mat(32'h99aabbcc, 2'b11, 1'b1, 1'b1, 1'b1, 32'hxxxxxxxx); // writing, output is don't care
-        // Read back column 3
-        test_data_mat(32'h00000000, 2'b11, 1'b1, 1'b0, 1'b0, 32'h99aabbcc); // reading, expect to get what we wrote
-
+    initial begin
+        reset_n = 0;
+        col_in = 0;
+        input_idx = 0;
+        input_row_col = 0;
+        write_enable = 0;
+        output_idx = 0;
+        output_row_col = 0;
+        #20;
+        reset_n = 1;
+        #10;
+        //write to row 0 
+        col_in = 32'h00112233;
+        input_idx = 0;
+        input_row_col = 0; //row
+        write_enable = 1;
+        #10;
+        write_enable = 0;
+        #10;
+        //read row 0
+        output_idx = 0;
+        output_row_col = 0; //row
+        #10;
+        if (out !== 32'h00112233) $display("Test 1 Failed: Expected 0x00112233, got %h", out);
+        else $display("Test 1 Passed");
+        #10;
+        //write to column 1
+        col_in = 32'h44556677;
+        input_idx = 1;
+        input_row_col = 1; //column
+        write_enable = 1;
+        #10;
+        write_enable = 0;
+        #10;
+        //read column 1
+        output_idx = 1;
+        output_row_col = 1; //column
+        #10;
+        if (out !== 32'h44556677) $display("Test 2 Failed: Expected 0x44556677, got %h", out);
+        else $display("Test 2 Passed");
+        #10;
+        //read row 0 again to ensure it is unchanged (save for the first byte, which was modified by the
+        //write to row 1!)
+        output_idx = 0;
+        output_row_col = 0; //row
+        #10;
+        if (out !== 32'h00442233) $display("Test 3 Failed: Expected 0x00112233, got %h", out);
+        else $display("Test 3 Passed");
+        #10;
         $finish;
     end
 endmodule

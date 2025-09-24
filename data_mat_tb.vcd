@@ -1,0 +1,141 @@
+$date
+	Thu Sep 18 14:25:42 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module data_mat_tb $end
+$var wire 32 ! out [31:0] $end
+$var reg 1 " clk $end
+$var reg 32 # col_in [31:0] $end
+$var reg 2 $ input_idx [1:0] $end
+$var reg 1 % input_row_col $end
+$var reg 2 & output_idx [1:0] $end
+$var reg 1 ' output_row_col $end
+$var reg 1 ( reset_n $end
+$var reg 1 ) write_enable $end
+$scope module dut $end
+$var wire 1 " clk $end
+$var wire 32 * col_in [31:0] $end
+$var wire 2 + input_idx [1:0] $end
+$var wire 1 % input_row_col $end
+$var wire 2 , output_idx [1:0] $end
+$var wire 1 ' output_row_col $end
+$var wire 1 ( reset_n $end
+$var wire 1 ) write_enable $end
+$var wire 1 - debug_state $end
+$var reg 32 . out [31:0] $end
+$scope begin $unm_blk_2 $end
+$var integer 32 / i [31:0] $end
+$var integer 32 0 j [31:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b100 0
+b100 /
+b0 .
+0-
+b0 ,
+b0 +
+b0 *
+0)
+0(
+0'
+b0 &
+0%
+b0 $
+b0 #
+0"
+b0 !
+$end
+#5000
+b100 0
+b100 /
+1"
+#10000
+0"
+#15000
+b100 0
+b100 /
+1"
+#20000
+0"
+1(
+#25000
+1"
+#30000
+0"
+1)
+b100010010001000110011 #
+b100010010001000110011 *
+#35000
+b100010010001000110011 !
+b100010010001000110011 .
+1"
+#40000
+0"
+0)
+#45000
+1"
+#50000
+0"
+#55000
+1"
+#60000
+0"
+#65000
+1"
+#70000
+0"
+1)
+1%
+b1 $
+b1 +
+b1000100010101010110011001110111 #
+b1000100010101010110011001110111 *
+#75000
+b10001000010001000110011 !
+b10001000010001000110011 .
+1"
+#80000
+0"
+0)
+#85000
+1"
+#90000
+b1000100010101010110011001110111 !
+b1000100010101010110011001110111 .
+0"
+1'
+b1 &
+b1 ,
+#95000
+1"
+#100000
+0"
+#105000
+1"
+#110000
+b10001000010001000110011 !
+b10001000010001000110011 .
+0"
+0'
+b0 &
+b0 ,
+#115000
+1"
+#120000
+0"
+#125000
+1"
+#130000
+0"

@@ -8,7 +8,7 @@ module ShiftRows(
 
 reg [31:0] row_out_reg;
 assign row_out = row_out_reg;
-always @* begin
+always @(*) begin
     case (idx_row)
         2'b00: row_out_reg = row_in; // No shift
         2'b01: begin // 1-byte left shift
