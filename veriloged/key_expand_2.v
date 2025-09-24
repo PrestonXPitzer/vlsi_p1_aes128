@@ -15,11 +15,11 @@ module key_expand (
     reg         loading;      // high when we are loading the key
     reg         expanded;     // high when expansion is done
 
-    // Flattened 2D array: 11 round keys (0 = initial key, 10 = last)
-    reg [127:0] round_keys [0:10];
+    reg [31:0] key_words   [0:43]; 
+    reg [31:0] i;
+    reg [31:0] temp;
 
-    assign dbg_curr_round_key = round_keys[round_key_num];
-
+    
     // Key loading state machine
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -34,10 +34,10 @@ module key_expand (
                 expanded   <= 1'b0;
             end else if (loading) begin
                 case (load_count)
-                    2'd0: key_reg[127:96] <= cipher_key;
-                    2'd1: key_reg[95:64]  <= cipher_key;
-                    2'd2: key_reg[63:32]  <= cipher_key;
-                    2'd3: key_reg[31:0]   <= cipher_key;
+                    2'd0: key_words[0] <= cipher_key;
+                    2'd1: key_words[1]  <= cipher_key;
+                    2'd2: key_words[2]  <= cipher_key;
+                    2'd3: key_words[3]   <= cipher_key;
                 endcase
                 if (load_count == 2'd3) begin
                     loading  <= 1'b0;
@@ -48,6 +48,12 @@ module key_expand (
         end
     end
 
+    //relevant constants
+    localparam Nk = 4; //key length
+    localparam Nr = 10; //number of rounds
+    localparam Nb = 4; // block size
+    localparam LOOP_BREAK_CONDITION = (4*Nr) + 3; //precompute
+
     // FSM states
     localparam IDLE   = 2'd0;
     localparam EXPAND = 2'd1;
@@ -57,7 +63,20 @@ module key_expand (
     reg [3:0] round_ctr;
     reg [127:0] current_key;
     reg [127:0] next;
+    reg [31:0] next_temp;
+    // Combinational calculation of next_temp
 
+    wire [31:0] key_im1 = key_words[i-1]
+    integer recon_idx;
+    always @* begin
+        next_temp = key_words[i-1];
+        rcon_idx = i / Nk;
+        if (i % Nk == 0) begin
+            next_temp = sub_word(rot_word(next_temp)) ^ rcon(rcon_idx);
+        end else if (Nk > 6 && i % Nk == 4) begin
+            next_temp = sub_word(next_temp);
+        end
+    end
     // Key expansion FSM
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -68,18 +87,16 @@ module key_expand (
             case (state)
                 IDLE: if (!loading) begin
                     current_key     <= key_reg;  // initial key
-                    round_keys[0]   <= key_reg;
                     round_ctr       <= 0;
                     state           <= EXPAND;
+                    i               <= Nk; //expansion begins in the lower loop
                 end
                 EXPAND: begin
-                    if (round_ctr <= 9) begin
-                        next = next_key(current_key, round_ctr+1);
-                        current_key <= next;
-                        round_keys[round_ctr+1] <= next;
-                        round_ctr   <= round_ctr + 1;
-                    end else begin
+                    if (i > (LOOP_BREAK_CONDITION)) begin
                         state <= DONE_S;
+                    end else begin
+                        key_words[i] <= key_words[i-Nk] ^ next_temp;
+                        i            <= i + 1;
                     end
                 end
                 DONE_S: begin
@@ -96,47 +113,18 @@ module key_expand (
             state     <= IDLE;
         end
     end
+    //combinational key retrieval logic 
+    wire [127:0] dbg_curr_round_key_w;
+    assign dbg_curr_round_key_w = { key_words[4*round_key_num],
+                                key_words[4*round_key_num + 1],
+                                key_words[4*round_key_num + 2],
+                                key_words[4*round_key_num + 3]};
+    assign dbg_curr_round_key = dbg_curr_round_key_w;
 
-    always @(*) begin
-        case (r_index)
-            2'd0: round_key = round_keys[round_key_num][127:96];
-            2'd1: round_key = round_keys[round_key_num][95:64];
-            2'd2: round_key = round_keys[round_key_num][63:32];
-            2'd3: round_key = round_keys[round_key_num][31:0];
-            default: round_key = 32'h00000000;
-        endcase
+    always @* begin
+
     end
 
-    // Function: get one 32-bit word from a 128-bit key
-    function [31:0] get_word;
-        input [127:0] key;
-        input [31:0]  index;
-        begin
-            case (index)
-                0: get_word = key[127:96];
-                1: get_word = key[95:64];
-                2: get_word = key[63:32];
-                3: get_word = key[31:0];
-                default: get_word = 32'h00000000;
-            endcase
-        end
-    endfunction
-
-    // Function: generate the next round key
-    function [127:0] next_key;
-        input [127:0] prev_key;
-        input [31:0]  round_num;
-        reg [31:0] temp, w0, w1, w2, w3;
-        begin
-            temp = get_word(prev_key, 3);
-            temp = sub_word(rot_word(temp)) ^ rcon(round_num);
-            w0 = get_word(prev_key, 0) ^ temp;
-            w1 = get_word(prev_key, 1) ^ w0;
-            w2 = get_word(prev_key, 2) ^ w1;
-            w3 = get_word(prev_key, 3) ^ w2;
-            next_key = {w0, w1, w2, w3};
-        end
-    endfunction
 
     // RotWord: rotate left by 8 bits
     function [31:0] rot_word;

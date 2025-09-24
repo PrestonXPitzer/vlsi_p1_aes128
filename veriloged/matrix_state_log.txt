@@ -23,236 +23,284 @@ f6 30 98 07
 a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         18
-19 a0 9a e9
-3d f4 c6 f8
-e3 e2 8d 48
-be 2b 2a 08
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         22
-d4 e0 b8 1e
-27 bf b4 41
-11 98 5d 52
-ae f1 e5 30
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         26
-d4 e0 b8 1e
-bf b4 41 27
-5d 52 11 98
-30 ae f1 e5
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         30
-04 e0 48 28
-66 cb f8 06
-81 19 d3 26
-e5 9a 7a 4c
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         34
-2f c8 e3 21
-18 65 0f c9
-94 cb c6 69
-f3 3c f2 70
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         38
-15 e8 11 fd
-ad 4d 76 dd
-22 1f b4 f9
-0d eb 89 51
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         42
-15 e8 11 fd
-4d 76 dd ad
-b4 f9 22 1f
-51 0d eb 89
+32 88 31 e0
+43 5a 31 37
+f6 30 98 07
+a8 8d a2 34
 ----------------------
 Printing Matrix State for Cycle         46
-18 a5 97 9b
-19 19 3d 14
-d8 60 ae ee
-64 b6 01 a7
+3b 23 31 e0
+8c ad 31 37
+b9 25 98 07
+94 05 a2 34
 ----------------------
 Printing Matrix State for Cycle         50
-42 d7 4e 4b
-1a b4 67 81
-ad c7 1c 13
-73 07 38 a2
+e2 26 19 cb
+64 95 9f 49
+56 3f 4a 12
+22 6b 04 22
 ----------------------
 Printing Matrix State for Cycle         54
-2c 0e 2f b3
-a2 8d 85 0c
-95 c6 9c 7d
-8f c5 07 3a
+e2 26 d4 1f
+95 db 3b 64
+56 3f d6 c9
+22 6b f2 93
 ----------------------
 Printing Matrix State for Cycle         58
-2c 0e 2f b3
-8d 85 0c a2
-9c 7d 95 c6
-3a 8f c5 07
+3e d1 d4 1f
+21 e9 3b 64
+6e 12 56 3f
+43 3c 6b f2
 ----------------------
 Printing Matrix State for Cycle         62
-72 7a 1a 41
-a8 17 56 ba
-cc fb 46 8f
-11 ef 79 a4
+37 7a c3 5f
+ee 1e 33 64
+21 07 fe 08
+7f b4 dc 85
 ----------------------
 Printing Matrix State for Cycle         66
-01 7b c2 49
-ab b9 a2 db
-d2 42 4d 79
-38 77 d8 00
+9a da eb 74
+28 72 9d 1a
+fd c5 2c 1d
+d2 8d 7a 93
 ----------------------
 Printing Matrix State for Cycle         70
-7c 21 25 3b
-62 56 3a b9
-b5 2c e3 b6
-07 f5 61 63
+9a da e9 92
+72 5e a2 28
+fd c5 71 a4
+d2 8d da dc
 ----------------------
 Printing Matrix State for Cycle         74
-7c 21 25 3b
-56 3a b9 62
-e3 b6 b5 2c
-63 07 f5 61
+14 3b e9 92
+31 43 a2 28
+75 ba fd c5
+15 30 8d da
 ----------------------
 Printing Matrix State for Cycle         78
-82 bd da 9d
-8d 93 7d ea
-52 65 e9 a2
-f7 e1 92 c1
+c4 e2 44 58
+a4 19 27 4c
+88 08 26 5e
+10 09 7e ef
 ----------------------
 Printing Matrix State for Cycle         82
-47 79 c6 89
-8e 3e 24 d2
-2b a5 22 9f
-ee 60 b2 45
+1c 98 36 02
+49 d4 8a 4f
+c4 30 81 2b
+ca 01 cf f8
 ----------------------
 Printing Matrix State for Cycle         86
-a0 b6 b4 a7
-19 b2 36 b5
-f1 06 93 db
-28 d0 37 6e
+1c 98 05 77
+d4 7e 84 49
+c4 30 0c f1
+ca 01 8a 41
 ----------------------
 Printing Matrix State for Cycle         90
-a0 b6 b4 a7
-b2 36 b5 19
-93 db f1 06
-6e 28 d0 37
+12 92 05 77
+fa a6 84 49
+13 5a c4 30
+7e b3 01 8a
 ----------------------
 Printing Matrix State for Cycle         94
-6b de 96 4f
-1f 84 1d a8
-9d 55 93 eb
-06 7c 38 83
+1a 4a 58 8f
+9b 52 40 3f
+e5 51 11 db
+da 12 4d ef
 ----------------------
 Printing Matrix State for Cycle         98
-23 52 06 cb
-29 1f df 52
-83 8b 86 c3
-e5 1e 7a 45
+a2 d6 59 fc
+14 00 ee 3c
+d9 d1 a8 c5
+57 c9 d5 c6
 ----------------------
 Printing Matrix State for Cycle        102
-26 00 6f 1f
-a5 c0 9e 00
-ec 3d 44 2e
-d9 72 da 6e
+a2 d6 cb b0
+00 28 eb 14
+d9 d1 c2 a6
+57 c9 03 b4
 ----------------------
 Printing Matrix State for Cycle        106
-26 00 6f 1f
-c0 9e 00 a5
-44 2e ec 3d
-6e d9 72 da
+29 3e cb b0
+4b 20 eb 14
+fa 50 d9 d1
+4c 41 c9 03
 ----------------------
 Printing Matrix State for Cycle        110
-3d 4e 40 2d
-1f 8c 32 d3
-dc b2 3a b5
-32 19 b9 16
+3d 22 bb 95
+73 79 bf f3
+c7 9b c9 18
+c8 61 fd 08
 ----------------------
 Printing Matrix State for Cycle        114
-65 9a 04 ed
-c2 ca b6 ad
-ae 1e 83 24
-b6 ff 1d 74
+27 93 7f 50
+8f b6 12 f0
+c6 14 09 61
+e8 ef 7c 11
 ----------------------
 Printing Matrix State for Cycle        118
-4d b8 f2 55
-25 74 4e 95
-e4 72 ec 36
-4e 16 a4 92
+27 93 d2 53
+b6 c9 8c 8f
+c6 14 01 ef
+e8 ef 10 82
 ----------------------
 Printing Matrix State for Cycle        122
-4d b8 f2 55
-74 4e 95 25
-ec 36 e4 72
-92 4e 16 a4
+0c 7a d2 53
+d1 d8 8c 8f
+0e bc c6 14
+c1 43 ef 10
 ----------------------
 Printing Matrix State for Cycle        126
-78 c1 a9 13
-18 30 e2 2d
-57 48 8e 63
-70 37 50 fb
+88 ea 19 28
+2b 1a 6f 7a
+26 a9 e3 c4
+07 01 e2 4e
 ----------------------
 Printing Matrix State for Cycle        130
-8a e7 cb b1
-77 19 4f fe
-50 e3 9c e0
-ca 6b a8 61
+c4 87 95 60
+f1 a2 f4 4c
+f7 d3 3d da
+c5 7c 80 ad
 ----------------------
 Printing Matrix State for Cycle        134
-7e 94 1f c8
-f5 d4 84 bb
-53 11 de e1
-74 7f c2 ef
+c4 87 2a d0
+a2 bf 29 f1
+f7 d3 27 57
+c5 7c cd 95
 ----------------------
 Printing Matrix State for Cycle        138
-7e 94 1f c8
-d4 84 bb f5
-de e1 53 11
-ef 74 7f c2
+dc 5d 2a d0
+67 de 29 f1
+8c c2 f7 d3
+e3 eb 7c cd
 ----------------------
 Printing Matrix State for Cycle        142
-aa 31 c4 5c
-5b cb f8 c8
-27 55 83 42
-4d 2a 37 38
+1c 19 a4 ad
+19 5a 06 8a
+1d 7b 72 d0
+81 4f 58 c8
 ----------------------
 Printing Matrix State for Cycle        146
-dc 61 f6 cc
-f0 49 d7 34
-08 d1 15 57
-82 b9 5c c9
+9c d4 70 f5
+d4 be 40 57
+a4 21 de a2
+0c 84 be 4c
 ----------------------
 Printing Matrix State for Cycle        150
-86 ef 42 4b
-8c 3b 0e 18
-30 3e 59 5b
-13 56 4a dd
+9c d4 51 e6
+be 09 5b d4
+a4 21 1d 3a
+0c 84 ae 29
 ----------------------
 Printing Matrix State for Cycle        154
-86 ef 42 4b
-3b 0e 18 8c
-59 5b 30 3e
-dd 13 56 4a
+ce 9e 51 e6
+f5 84 5b d4
+63 bd a4 21
+4e 4c 84 ae
 ----------------------
 Printing Matrix State for Cycle        158
-de 9f ca 6d
-c6 0d 74 40
-73 62 c0 65
-52 59 42 fb
+6c fc 6f 3f
+26 29 94 98
+e0 af ce 99
+d4 b4 1f 83
 ----------------------
 Printing Matrix State for Cycle        162
-28 39 5e 69
-34 7d 2b e3
-5c c9 fd 4d
-a3 3b 4b 03
+50 b0 49 cd
+f7 a5 bd f7
+e1 79 65 9e
+48 8d 43 39
 ----------------------
 Printing Matrix State for Cycle        166
-34 12 58 f9
-18 ff f1 11
-4a dd 54 e3
-0a e2 b3 7b
+50 b0 3b bd
+a5 7a 68 f7
+e1 79 4d 0b
+48 8d 1a 12
 ----------------------
 Printing Matrix State for Cycle        170
-34 12 58 f9
-ff f1 11 18
-54 e3 4a dd
-7b 0a e2 b3
+0b b6 3b bd
+c4 11 68 f7
+59 04 e1 79
+3c 2a 8d 1a
+----------------------
+Printing Matrix State for Cycle        174
+9b 84 a2 00
+38 3e 5e d9
+4c 92 06 96
+cd 41 c5 66
+----------------------
+Printing Matrix State for Cycle        178
+14 5f f2 76
+07 b2 dc 72
+29 4f 82 b9
+bd 83 56 a9
+----------------------
+Printing Matrix State for Cycle        182
+14 5f 89 38
+b2 86 40 07
+29 4f 13 56
+bd 83 b1 d3
+----------------------
+Printing Matrix State for Cycle        186
+25 c4 89 38
+8d 0f 40 07
+ee a9 29 4f
+20 50 83 b1
+----------------------
+Printing Matrix State for Cycle        190
+21 50 63 87
+2e 50 f1 56
+c6 94 05 69
+d8 59 f4 79
+----------------------
+Printing Matrix State for Cycle        194
+fd 53 c5 71
+31 53 81 a4
+b4 22 ae 46
+61 cb 96 88
+----------------------
+Printing Matrix State for Cycle        198
+fd 53 a6 a3
+53 0c 49 31
+b4 22 e4 5a
+61 cb 90 c4
+----------------------
+Printing Matrix State for Cycle        202
+e2 48 a6 a3
+c6 3a 49 31
+75 e3 b4 22
+54 09 cb 90
 ----------------------
