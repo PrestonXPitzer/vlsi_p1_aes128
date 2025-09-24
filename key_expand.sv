@@ -81,21 +81,43 @@ module key_expand(
                         state       <= EXPAND;
                     end 
                 end
-                // EXPAND: begin
-                //     //done after 10 cycles
-                //     if (round_ctr <= 9) begin
-                //         // generate next_key from current_key
-                //         //*should edit to compute next key once into temp*
-                //         current_key <= next_key(current_key, round_ctr+1);
-                //         round_keys[round_ctr+1] <= next_key(current_key, round_ctr+1);
-                //         round_ctr <= round_ctr + 1;
-                //     end 
-                //     else state <= DONE;
-                // end
                 EXPAND: begin
-                    if (round_ctr <= 43) begin
+                    if (round_ctr <= 43) begin/*
                         w[round_ctr] <= next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2); //(>>2 equiv to divide by 4)
                         round_ctr <= round_ctr + 1;
+
+                        // Print intermediate values for debugging
+                    $display("Time %0t | i=%0d | prev_word=%h | wordNk=%h | temp (after sub/rot/rcon)=%h | w[i]=%h",
+                            $time, round_ctr, w[round_ctr-1], w[round_ctr-4], 
+                            (round_ctr % 4 == 0) ? (sub_word(rot_word(w[round_ctr-1])) ^ rcon(round_ctr>>2)) : w[round_ctr-1],
+                            next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2));*/
+                        logic [31:0] temp;
+                        logic [31:0] after_rot;
+                        logic [31:0] after_sub_rcon;
+                        logic [31:0] new_word;
+
+                        temp = w[round_ctr-1];
+                        after_rot = (round_ctr % 4 == 0) ? rot_word(temp) : temp;
+                        after_sub_rcon = (round_ctr % 4 == 0) ? (sub_word(after_rot) ^ rcon(round_ctr>>2)) : temp;
+                        new_word = w[round_ctr-4] ^ after_sub_rcon;
+                        w[round_ctr] <= new_word;
+                        
+                        if (round_ctr == 4) begin
+                            // Print header once before first expansion step
+                            $display("i temp    ROTWORD() SUBWORD() Rcon SUBWD^Rcon w[i]");
+                        end
+                        $display("%0d %h %h %h %h %h %h",
+                            round_ctr,
+                            temp,                 // temp (prev_word)
+                            after_rot,            // after ROTWORD
+                            sub_word(after_rot),  // after SUBWORD
+                            rcon(round_ctr>>2),   // Rcon[i/Nk]
+                            after_sub_rcon,       // after SUBWORD ^ Rcon
+                            new_word              // final w[i]
+                        );
+
+                        round_ctr <= round_ctr + 1;
+
                     end else begin
                         // pack round keys into 128-bit blocks
                         for (int r = 0; r <= 10; r++) begin
@@ -119,6 +141,23 @@ module key_expand(
         round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
     end
 
+
+    function automatic logic [31:0] next_word(
+        input int i,
+        input logic [31:0] prev_word,
+        input logic [31:0] wordNk,
+        input int round_num
+        );
+            logic [31:0] temp;
+        begin
+            temp = prev_word;
+            if (i % 4 == 0) begin
+                temp = sub_word(rot_word(temp)) ^ rcon(round_num);
+            end
+            next_word = wordNk ^ temp;
+        end
+    endfunction
+
     function automatic logic [31:0] get_word(
         input logic [127:0] key,
         input int index
@@ -128,45 +167,6 @@ module key_expand(
         end
     endfunction
 
-    //helper functions
-    // Function to generate the next round key
-    // function automatic logic [127:0] next_key(
-    //         input logic [127:0] prev_key,
-    //         input int round_num
-    //     );
-    //         logic [31:0] temp, w0, w1, w2, w3;
-    //     begin
-    //         // pull last word of previous round key
-    //         temp = get_word(prev_key, 3);
-
-    //         // Special schedule core every 4th word
-    //         temp = sub_word(rot_word(temp)) ^ rcon(round_num);
-
-    //         // Build new round key word by word
-    //         w0 = get_word(prev_key, 0) ^ temp;
-    //         w1 = get_word(prev_key, 1) ^ w0;
-    //         w2 = get_word(prev_key, 2) ^ w1;
-    //         w3 = get_word(prev_key, 3) ^ w2;
-
-    //         return {w0, w1, w2, w3};
-    //     end
-    // endfunction
-
-    function automatic logic [31:0] next_word(
-    input int i,
-    input logic [31:0] prev_word,
-    input logic [31:0] wordNk,
-    input int round_num
-    );
-        logic [31:0] temp;
-    begin
-        temp = prev_word;
-        if (i % 4 == 0) begin
-            temp = sub_word(rot_word(temp)) ^ rcon(round_num);
-        end
-        next_word = wordNk ^ temp;
-    end
-    endfunction
 
     // RotWord: rotate left by 8 bits
     function [31:0] rot_word;

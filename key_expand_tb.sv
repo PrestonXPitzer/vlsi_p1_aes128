@@ -40,7 +40,7 @@ module tb_key_expand;
         // Hold reset for a few cycles
         #50;
         reset = 0;
-
+/*
         start = 1;  // begin loading sequence
         @(posedge clk);
         start = 0; // finish start pulse
@@ -181,7 +181,7 @@ module tb_key_expand;
             end
             $display("");
         end
-
+*/
          #50;
         @(posedge clk);
         start = 1;  // begin loading sequence for new key
