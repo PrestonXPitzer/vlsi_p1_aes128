@@ -1,12 +1,216 @@
-//read a row's worth of bytes and perform the s-box substition on each byte, showing
-//the output as a row of bytes
-//combinationally implemented
-module s_box(
-    input [31:0] row_in,
-    output [31:0] row_out
+module key_expand(
+    input  logic        clk,
+    input  logic        reset,
+    input  logic        start,          //one cycle start pulse sent begin key expansion
+    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
+    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
+    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
+    output logic [31:0]  round_key,     // expanded round key
+    output logic         done           // high when round_key output is valid
 );
 
-function [7:0] sbox_lookup;
+    logic [127:0] key_reg;      //stores the complete cipher key
+    logic [1:0]   load_count;   // counts which 32-bit word we are on
+    logic         loading;      // high when we are loading the key
+    logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
+
+
+    logic [31:0] w [0:43]; // 44 words total (AES-128)
+    // Key loading state machine
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            key_reg    <= 128'd0;
+            load_count <= 2'd0;
+            loading    <= 1'b0;
+        end else begin
+            if (start) begin
+                load_count <= 2'd0;
+                loading    <= 1'b1;
+            end 
+            else if (loading) begin
+                case (load_count)
+                    2'd0: key_reg[127:96] <= cipher_key;
+                    2'd1: key_reg[95:64]  <= cipher_key;
+                    2'd2: key_reg[63:32]  <= cipher_key;
+                    2'd3: key_reg[31:0]   <= cipher_key;
+                endcase
+                if (load_count == 2'd3) begin
+                    loading  <= 1'b0;
+                    load_count <= 2'b00;
+                end
+                else load_count <= load_count + 1'b1;
+            end
+        end
+    end
+
+
+    //varibles for 11 stage round key expansion:
+    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
+    state_t state;
+
+    logic [5:0] round_ctr; //edited
+    logic [127:0] current_key;
+
+
+    //key expansion code
+    always_ff @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state <= IDLE;
+            round_ctr <= 0;
+            done <= 0;
+        end 
+        else if (start)begin 
+            state   <= LOAD;
+            done <= 0;
+        end
+        else begin
+            case (state)
+                IDLE: begin
+                    state <= IDLE;
+                end
+                LOAD:begin
+                    if (!loading) begin
+                        done <= 0;
+                        current_key <= key_reg;  // initial key
+                        round_keys[0]   <= key_reg;
+                        w[0] <= key_reg[127:96];
+                        w[1] <= key_reg[95:64];
+                        w[2] <= key_reg[63:32];
+                        w[3] <= key_reg[31:0];
+                        round_ctr   <= 4;
+                        state       <= EXPAND;
+                    end 
+                end
+                EXPAND: begin
+                    if (round_ctr <= 43) begin/*
+                        w[round_ctr] <= next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2); //(>>2 equiv to divide by 4)
+                        round_ctr <= round_ctr + 1;
+
+                        // Print intermediate values for debugging
+                    $display("Time %0t | i=%0d | prev_word=%h | wordNk=%h | temp (after sub/rot/rcon)=%h | w[i]=%h",
+                            $time, round_ctr, w[round_ctr-1], w[round_ctr-4], 
+                            (round_ctr % 4 == 0) ? (sub_word(rot_word(w[round_ctr-1])) ^ rcon(round_ctr>>2)) : w[round_ctr-1],
+                            next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2));*/
+                        logic [31:0] temp;
+                        logic [31:0] after_rot;
+                        logic [31:0] after_sub_rcon;
+                        logic [31:0] new_word;
+
+                        temp = w[round_ctr-1];
+                        after_rot = (round_ctr % 4 == 0) ? rot_word(temp) : temp;
+                        after_sub_rcon = (round_ctr % 4 == 0) ? (sub_word(after_rot) ^ rcon(round_ctr>>2)) : temp;
+                        new_word = w[round_ctr-4] ^ after_sub_rcon;
+                        w[round_ctr] <= new_word;
+                        
+                        if (round_ctr == 4) begin
+                            // Print header once before first expansion step
+                            //$display("i temp    ROTWORD() SUBWORD() Rcon  SUBWD^Rcon  w[i]");
+                        end
+                        //$display("%0d %h %h %h %h %h %h",
+                        //    round_ctr,
+                        //    temp,                 // temp (prev_word)
+                        //    after_rot,            // after ROTWORD
+                        //    sub_word(after_rot),  // after SUBWORD
+                        //    rcon(round_ctr>>2),   // Rcon[i/Nk]
+                        //    after_sub_rcon,       // after SUBWORD ^ Rcon
+                        //    new_word              // final w[i]
+                        //);
+
+                        round_ctr <= round_ctr + 1;
+
+                    end else begin
+                        // pack round keys into 128-bit blocks
+                        for (int r = 0; r <= 10; r++) begin
+                            round_keys[r] <= {w[4*r], w[4*r+1], w[4*r+2], w[4*r+3]};
+                        end
+                        state <= DONE;
+                    end
+                end
+                DONE: begin
+                    done <= 1;
+                    state <= IDLE; //stay in done until new start pulse
+                end
+            endcase
+        end
+    end
+        
+    
+
+    //process for returning the round keys
+    always_comb begin
+        round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
+    end
+
+
+    function automatic logic [31:0] next_word(
+        input int i,
+        input logic [31:0] prev_word,
+        input logic [31:0] wordNk,
+        input int round_num
+        );
+            logic [31:0] temp;
+        begin
+            temp = prev_word;
+            if (i % 4 == 0) begin
+                temp = sub_word(rot_word(temp)) ^ rcon(round_num);
+            end
+            next_word = wordNk ^ temp;
+        end
+    endfunction
+
+    function automatic logic [31:0] get_word(
+        input logic [127:0] key,
+        input int index
+    );
+        begin
+            get_word = key[127 - (index*32) -: 32];
+        end
+    endfunction
+
+
+    // RotWord: rotate left by 8 bits
+    function [31:0] rot_word;
+        input [31:0] w;
+        begin
+            rot_word = {w[23:0], w[31:24]};
+        end
+    endfunction
+
+    // SubWord: apply S-box to each byte
+    function [31:0] sub_word;
+        input [31:0] w;
+        begin
+            sub_word[31:24] = sbox_lookup(w[31:24]);
+            sub_word[23:16] = sbox_lookup(w[23:16]);
+            sub_word[15:8]  = sbox_lookup(w[15:8]);
+            sub_word[7:0]   = sbox_lookup(w[7:0]);
+        end
+    endfunction
+
+    // Rcon: round constant
+    function [31:0] rcon;
+        input integer i;
+        reg [7:0] rc;
+        begin
+            case(i)
+                1: rc = 8'h01;
+                2: rc = 8'h02;
+                3: rc = 8'h04;
+                4: rc = 8'h08;
+                5: rc = 8'h10;
+                6: rc = 8'h20;
+                7: rc = 8'h40;
+                8: rc = 8'h80;
+                9: rc = 8'h1B;
+                10: rc = 8'h36;
+                default: rc = 8'h00;
+            endcase
+            rcon = {rc, 24'h000000};
+        end
+    endfunction
+
+    // S-box lookup table (AES standard)
+    function [7:0] sbox_lookup;
         input [7:0] byte_in;
         begin
             case (byte_in)
@@ -297,10 +501,5 @@ function [7:0] sbox_lookup;
             endcase
         end
     endfunction
-
-assign row_out[31:24] = sbox_lookup(row_in[31:24]);
-assign row_out[23:16] = sbox_lookup(row_in[23:16]);
-assign row_out[15:8]  = sbox_lookup(row_in[15:8]);
-assign row_out[7:0]   = sbox_lookup(row_in[7:0]);
 
 endmodule
