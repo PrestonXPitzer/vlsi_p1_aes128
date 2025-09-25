@@ -1,21 +1,21 @@
 module key_expand(
-    input  logic        clk,
-    input  logic        reset,
-    input  logic        start,          //one cycle start pulse sent begin key expansion
-    input  logic [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
-    input  logic [1:0]   r_index,       // which 32 bit section of the key to output
-    input  logic [3:0]   round_key_num, // which round key to output (ask preston)
-    output logic [31:0]  round_key,     // expanded round key
-    output logic         done           // high when round_key output is valid
+    input       clk,
+    input       reset,
+    input       start,          //one cycle start pulse sent begin key expansion
+    input [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
+    input  [1:0]   r_index,       // which 32 bit section of the key to output
+    input  [3:0]   round_key_num, // which round key to output (ask preston)
+    output [31:0]  round_key,     // expanded round key
+    output         done           // high when round_key output is valid
 );
 
-    logic [127:0] key_reg;      //stores the complete cipher key
-    logic [1:0]   load_count;   // counts which 32-bit word we are on
-    logic         loading;      // high when we are loading the key
-    logic [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
+    reg [127:0] key_reg;      //stores the complete cipher key
+    reg [1:0]   load_count;   // counts which 32-bit word we are on
+    reg         loading;      // high when we are loading the key
+    reg [127:0] round_keys [0:10]; // 2D-aray : 11 round keys (0 = initial key, 10 = last)
 
 
-    logic [31:0] w [0:43]; // 44 words total (AES-128)
+    reg [31:0] w [0:43]; // 44 words total (AES-128)
     // Key loading state machine
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -45,15 +45,21 @@ module key_expand(
 
 
     //varibles for 11 stage round key expansion:
-    typedef enum logic [1:0] {IDLE, LOAD, EXPAND, DONE} state_t;
-    state_t state;
+    localparam IDLE=2'b00, LOAD=2'b01, EXPAND=2'b10, DONE=2'b11;
+    reg [1:0] state;
 
-    logic [5:0] round_ctr; //edited
-    logic [127:0] current_key;
+    reg [5:0] round_ctr; //edited
+    reg [127:0] current_key;
 
+    //vars for key expansion
+    reg [31:0] temp;
+    reg [31:0] after_rot;
+    reg [31:0] after_sub_rcon;
+    reg [31:0] new_word;
+    integer r;
 
     //key expansion code
-    always_ff @(posedge clk or posedge reset) begin
+    always @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
             round_ctr <= 0;
@@ -91,10 +97,7 @@ module key_expand(
                             $time, round_ctr, w[round_ctr-1], w[round_ctr-4], 
                             (round_ctr % 4 == 0) ? (sub_word(rot_word(w[round_ctr-1])) ^ rcon(round_ctr>>2)) : w[round_ctr-1],
                             next_word(round_ctr, w[round_ctr-1], w[round_ctr-4], round_ctr>>2));*/
-                        logic [31:0] temp;
-                        logic [31:0] after_rot;
-                        logic [31:0] after_sub_rcon;
-                        logic [31:0] new_word;
+                        
 
                         temp = w[round_ctr-1];
                         after_rot = (round_ctr % 4 == 0) ? rot_word(temp) : temp;
@@ -120,7 +123,8 @@ module key_expand(
 
                     end else begin
                         // pack round keys into 128-bit blocks
-                        for (int r = 0; r <= 10; r++) begin
+                        
+                        for (r = 0; r <= 10; r++) begin
                             round_keys[r] <= {w[4*r], w[4*r+1], w[4*r+2], w[4*r+3]};
                         end
                         state <= DONE;
@@ -137,18 +141,23 @@ module key_expand(
     
 
     //process for returning the round keys
-    always_comb begin
-        round_key = round_keys[round_key_num][127 - (r_index*32) -: 32];
+    always(*)begin
+        case (r_index)
+            2'd0: round_key = round_keys[round_key_num][127:96];
+            2'd1: round_key = round_keys[round_key_num][95:64];
+            2'd2: round_key = round_keys[round_key_num][63:32];
+            2'd3: round_key = round_keys[round_key_num][31:0];
+        endcase
     end
+    
 
 
-    function automatic logic [31:0] next_word(
-        input int i,
-        input logic [31:0] prev_word,
-        input logic [31:0] wordNk,
-        input int round_num
-        );
-            logic [31:0] temp;
+    function [31:0] next_word;
+        input [5:0] i;           // was "integer i" → AES-128 only needs up to 43
+        input [31:0] prev_word;
+        input [31:0] wordNk;
+        input [3:0] round_num;   // was "integer round_num", AES-128 only needs 0..10
+        reg [31:0] temp;
         begin
             temp = prev_word;
             if (i % 4 == 0) begin
@@ -158,14 +167,20 @@ module key_expand(
         end
     endfunction
 
-    function automatic logic [31:0] get_word(
-        input logic [127:0] key,
-        input int index
-    );
+    function [31:0] get_word;
+        input [127:0] key;
+        input [1:0] index;  // only 0..3 needed for AES-128
         begin
-            get_word = key[127 - (index*32) -: 32];
+            case (index)
+                2'd0: get_word = key[127:96];
+                2'd1: get_word = key[95:64];
+                2'd2: get_word = key[63:32];
+                2'd3: get_word = key[31:0];
+                default: get_word = 32'h00000000;
+            endcase
         end
     endfunction
+
 
 
     // RotWord: rotate left by 8 bits
@@ -179,30 +194,32 @@ module key_expand(
     // SubWord: apply S-box to each byte
     function [31:0] sub_word;
         input [31:0] w;
+        reg [31:0] tmp;
         begin
-            sub_word[31:24] = sbox_lookup(w[31:24]);
-            sub_word[23:16] = sbox_lookup(w[23:16]);
-            sub_word[15:8]  = sbox_lookup(w[15:8]);
-            sub_word[7:0]   = sbox_lookup(w[7:0]);
+            tmp[31:24] = sbox_lookup(w[31:24]);
+            tmp[23:16] = sbox_lookup(w[23:16]);
+            tmp[15:8]  = sbox_lookup(w[15:8]);
+            tmp[7:0]   = sbox_lookup(w[7:0]);
+            sub_word   = tmp;
         end
     endfunction
 
     // Rcon: round constant
     function [31:0] rcon;
-        input integer i;
+        input [3:0] i;   // 4 bits is enough for AES-128 rounds
         reg [7:0] rc;
         begin
-            case(i)
-                1: rc = 8'h01;
-                2: rc = 8'h02;
-                3: rc = 8'h04;
-                4: rc = 8'h08;
-                5: rc = 8'h10;
-                6: rc = 8'h20;
-                7: rc = 8'h40;
-                8: rc = 8'h80;
-                9: rc = 8'h1B;
-                10: rc = 8'h36;
+            case (i)
+                4'd1:  rc = 8'h01;
+                4'd2:  rc = 8'h02;
+                4'd3:  rc = 8'h04;
+                4'd4:  rc = 8'h08;
+                4'd5:  rc = 8'h10;
+                4'd6:  rc = 8'h20;
+                4'd7:  rc = 8'h40;
+                4'd8:  rc = 8'h80;
+                4'd9:  rc = 8'h1B;
+                4'd10: rc = 8'h36;
                 default: rc = 8'h00;
             endcase
             rcon = {rc, 24'h000000};
