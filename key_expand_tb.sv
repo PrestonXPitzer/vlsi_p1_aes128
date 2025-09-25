@@ -41,7 +41,7 @@ module tb_key_expand;
         // Hold reset for a few cycles
         #50;
         reset = 0;
-
+/*
         start = 1;  // begin loading sequence
         @(posedge clk);
         start = 0; // finish start pulse
@@ -172,6 +172,36 @@ module tb_key_expand;
         // Print out all round keys
 
         $display("check after reset:");
+        for (int r = 0; r <= 10; r++) begin
+            $write("Round %0d : ", r);
+            for (int w = 0; w < 4; w++) begin
+                round_key_num = r;
+                r_index = w;
+                #1; // small delay for combinational settle
+                $write("%h ", round_key);
+            end
+            $display("");
+        end
+*/
+         #50;
+        @(posedge clk);
+        start = 1;  // begin loading sequence for new key
+        @(posedge clk);
+        start = 0; // finish start pulse
+        cipher_key = 32'h2b7e1516;
+        @(posedge clk);
+        cipher_key = 32'h28aed2a6;  // careful: little vs big endian, see below
+        @(posedge clk);
+        cipher_key = 32'habf71588;
+        @(posedge clk);
+        cipher_key = 32'h09cf4f3c;
+        @(posedge clk);
+
+        // Wait for expansion to complete
+        wait(done);
+
+        // Print out all round keys
+        $display("FIPS-197 Test Vector Key (2b7e...):");
         for (int r = 0; r <= 10; r++) begin
             $write("Round %0d : ", r);
             for (int w = 0; w < 4; w++) begin

@@ -104,17 +104,17 @@ module key_expand(
                         
                         if (round_ctr == 4) begin
                             // Print header once before first expansion step
-                            $display("i temp    ROTWORD() SUBWORD() Rcon  SUBWD^Rcon  w[i]");
+                            //$display("i temp    ROTWORD() SUBWORD() Rcon  SUBWD^Rcon  w[i]");
                         end
-                        $display("%0d %h %h %h %h %h %h",
-                            round_ctr,
-                            temp,                 // temp (prev_word)
-                            after_rot,            // after ROTWORD
-                            sub_word(after_rot),  // after SUBWORD
-                            rcon(round_ctr>>2),   // Rcon[i/Nk]
-                            after_sub_rcon,       // after SUBWORD ^ Rcon
-                            new_word              // final w[i]
-                        );
+                        //$display("%0d %h %h %h %h %h %h",
+                        //    round_ctr,
+                        //    temp,                 // temp (prev_word)
+                        //    after_rot,            // after ROTWORD
+                        //    sub_word(after_rot),  // after SUBWORD
+                        //    rcon(round_ctr>>2),   // Rcon[i/Nk]
+                        //    after_sub_rcon,       // after SUBWORD ^ Rcon
+                        //    new_word              // final w[i]
+                        //);
 
                         round_ctr <= round_ctr + 1;
 
