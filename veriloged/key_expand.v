@@ -107,7 +107,7 @@ module key_expand(
                         
                         if (round_ctr == 4) begin
                             // Print header once before first expansion step
-                            $display("i temp    ROTWORD() SUBWORD() Rcon  SUBWD^Rcon  w[i]");
+                            $display("i  temp    ROTWORD() SBWRD()   Rcon   SBWD^Rcon  w[i]");
                         end
                         $display("%0d %h %h %h %h %h %h",
                             round_ctr,
