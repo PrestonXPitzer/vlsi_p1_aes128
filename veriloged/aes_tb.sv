@@ -16,6 +16,8 @@ module aes_tb();
     logic [31:0]  cycles = 0;
     integer matrix_file;
 
+    logic [127:0] ciphertext = 128'd0;
+
     aes uut(
         .clk(clk),
         .reset_n(reset_n),
@@ -119,14 +121,13 @@ module aes_tb();
         start_read_n = 1;
         $display("[%0t] Start read deasserted", $time);
         //read out the ciphertext
+        $display("[%0t] Ciphertext Dword 0: %h", $time, dword_out);
         #10;
-        $display("[%0t] Ciphertext Dword 0: %h", $time, dword_out); //should be 3f5b8cc9
+        $display("[%0t] Ciphertext Dword 1: %h", $time, dword_out);
         #10;
-        $display("[%0t] Ciphertext Dword 1: %h", $time, dword_out); //should be ea855a0a
+        $display("[%0t] Ciphertext Dword 2: %h", $time, dword_out);
         #10;
-        $display("[%0t] Ciphertext Dword 2: %h", $time, dword_out); //should be fa7347d2
-        #10;
-        $display("[%0t] Ciphertext Dword 3: %h", $time, dword_out); //should be 3e8d664e
+        $display("[%0t] Ciphertext Dword 3: %h", $time, dword_out);
         #10;
         $finish;
     end
