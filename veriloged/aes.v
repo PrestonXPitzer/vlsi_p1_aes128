@@ -13,7 +13,6 @@ module aes(
 wire [5:0] current_state;
 wire [3:0] round_counter;
 
-// Add correct width declarations for all signals used in submodules
 wire [3:0] matrix_in_sel;
 wire write_enable;
 wire row_col_sel;
