@@ -46,7 +46,7 @@ module aes_tb();
         
     task printMatrix (input [127:0] matrix_state, input [31:0] cycle);
         begin
-            if (cycles % 4 == 2) begin
+            if (cycles % 4 == 0) begin
                 $fwrite(matrix_file,"Printing Matrix State for Cycle %d\n", cycle);
                 // Column 0 | Column 1 | Column 2 | Column 3
                 $fwrite(matrix_file,"%h %h %h %h\n", matrix_state[127:120], matrix_state[95:88],  matrix_state[63:56],  matrix_state[31:24]);

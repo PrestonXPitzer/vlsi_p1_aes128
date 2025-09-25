@@ -32,7 +32,7 @@ localparam ENCRYPTION_DONE = 6'd8;
 localparam CTEXT_READ = 6'd9;
 localparam INIT_ADDROUNDKEY = 6'd10;
 
-localparam NUM_ROUNDS = 4'd9;
+localparam NUM_ROUNDS = 4'd10;
 
 reg [5:0] current_state, next_state;
 reg [3:0] round_counter, next_round_counter; //4-bit counter for 10 rounds
@@ -86,6 +86,7 @@ always @(*) begin
             if (count_4 == 2'd3) begin
                 next_state = SUBBYTES;
                 next_count_4 = 2'd0;
+                next_round_counter = 4'd1;
             end else begin
                 next_count_4 = count_4 +1;
             end
