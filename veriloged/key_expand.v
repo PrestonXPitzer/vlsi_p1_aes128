@@ -5,8 +5,8 @@ module key_expand(
     input [31:0]  cipher_key,    // initial key pulled in 4cycles (32bit each)
     input  [1:0]   r_index,       // which 32 bit section of the key to output
     input  [3:0]   round_key_num, // which round key to output (ask preston)
-    output [31:0]  round_key,     // expanded round key
-    output         done           // high when round_key output is valid
+    output reg [31:0]  round_key,     // expanded round key
+    output reg     done           // high when round_key output is valid
 );
 
     reg [127:0] key_reg;      //stores the complete cipher key
@@ -124,7 +124,7 @@ module key_expand(
                     end else begin
                         // pack round keys into 128-bit blocks
                         
-                        for (r = 0; r <= 10; r++) begin
+                        for (r = 0; r <= 10; r=r+1) begin
                             round_keys[r] <= {w[4*r], w[4*r+1], w[4*r+2], w[4*r+3]};
                         end
                         state <= DONE;
@@ -141,7 +141,7 @@ module key_expand(
     
 
     //process for returning the round keys
-    always(*)begin
+    always@(*)begin
         case (r_index)
             2'd0: round_key = round_keys[round_key_num][127:96];
             2'd1: round_key = round_keys[round_key_num][95:64];
@@ -157,13 +157,13 @@ module key_expand(
         input [31:0] prev_word;
         input [31:0] wordNk;
         input [3:0] round_num;   // was "integer round_num", AES-128 only needs 0..10
-        reg [31:0] temp;
+        reg [31:0] tempx;
         begin
-            temp = prev_word;
+            tempx = prev_word;
             if (i % 4 == 0) begin
-                temp = sub_word(rot_word(temp)) ^ rcon(round_num);
+                tempx = sub_word(rot_word(tempx)) ^ rcon(round_num);
             end
-            next_word = wordNk ^ temp;
+            next_word = wordNk ^ tempx;
         end
     endfunction
 
